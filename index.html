@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>FANZA運用分析ダッシュボード</title>
+  <style>
+    :root{
+      --bg:#f5f6f8;--card:#ffffff;--text:#14171a;--muted:#667085;--line:#e5e7eb;--accent:#111827;--good:#16a34a;--warn:#f59e0b;--bad:#dc2626;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);padding-bottom:92px}
+    header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:14px 16px calc(12px + env(safe-area-inset-top));}
+    h1{font-size:20px;margin:0}.sub{font-size:12px;color:var(--muted);margin-top:4px}
+    main{padding:14px;max-width:960px;margin:0 auto}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 1px 2px rgba(0,0,0,.04);margin-bottom:12px}.metric{font-size:12px;color:var(--muted)}.value{font-size:24px;font-weight:800;margin-top:4px}.section-title{font-size:17px;font-weight:800;margin:18px 4px 10px}
+    input,select,textarea,button{font:inherit}label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}.full{grid-column:1/-1}input,select,textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:11px;background:#fff}textarea{min-height:68px}button{border:0;border-radius:14px;padding:12px 14px;font-weight:800;background:var(--accent);color:#fff}.ghost{background:#eef2f7;color:#111827}.danger{background:#fee2e2;color:#991b1b}.pill{display:inline-block;padding:4px 9px;border-radius:99px;background:#eef2f7;font-size:12px;color:#344054;margin:2px}.grade{font-weight:900}.grade.S{color:#16a34a}.grade.A{color:#22c55e}.grade.B{color:#2563eb}.grade.C{color:#f59e0b}.grade.D{color:#dc2626}
+    table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid var(--line);padding:9px 6px;text-align:left;vertical-align:top}th{color:var(--muted);font-weight:700}.scroll{overflow:auto}.tabs{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:8px 4px calc(8px + env(safe-area-inset-bottom));z-index:20}.tab{background:transparent;color:#475467;border-radius:12px;padding:8px 2px;font-size:11px}.tab.active{background:#111827;color:#fff}.hidden{display:none}.hint{font-size:12px;color:var(--muted);line-height:1.6}.bar{height:10px;background:#eef2f7;border-radius:99px;overflow:hidden}.bar span{display:block;height:100%;background:#111827;border-radius:99px}.actions{display:flex;gap:8px;flex-wrap:wrap}.small{font-size:12px;padding:8px 10px}.note{white-space:pre-wrap}.list-item{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding:10px 0}.list-item:last-child{border-bottom:0}.right{text-align:right}.muted{color:var(--muted)}
+    @media(min-width:760px){.grid{grid-template-columns:repeat(4,1fr)}.form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.row{display:contents}.full{grid-column:1/-1}}
+  </style>
+</head>
+<body>
+<header><h1>FANZA運用分析ダッシュボード</h1><div class="sub">投稿ごとの成果を記録して、伸びる型・売れる型を見つける</div></header>
+<main>
+  <section id="home" class="page">
+    <div class="grid">
+      <div class="card"><div class="metric">投稿数</div><div class="value" id="mPosts">0</div></div>
+      <div class="card"><div class="metric">総imp</div><div class="value" id="mImp">0</div></div>
+      <div class="card"><div class="metric">総クリック</div><div class="value" id="mClicks">0</div></div>
+      <div class="card"><div class="metric">総売上</div><div class="value" id="mSales">¥0</div></div>
+    </div>
+    <div class="card"><div class="section-title" style="margin-top:0">今日の判断</div><div id="advice" class="hint"></div></div>
+    <div class="section-title">直近の投稿</div><div class="card" id="recent"></div>
+  </section>
+
+  <section id="input" class="page hidden">
+    <div class="section-title">投稿を記録</div>
+    <div class="card">
+      <div class="form-grid">
+        <div class="row"><div><label>投稿日</label><input id="date" type="date"></div><div><label>時間</label><input id="time" type="time"></div></div>
+        <div class="row"><div><label>投稿タイプ</label><select id="type"><option>伸ばす投稿</option><option>売る投稿</option><option>リンクあり</option><option>リンクなし</option><option>有償RPあり</option></select></div><div><label>投稿文タイプ</label><select id="copyType"><option>ギャップ型</option><option>好奇心型</option><option>共感型</option><option>背徳感型</option><option>セール型</option><option>直球型</option><option>検証中</option></select></div></div>
+        <div class="row"><div><label>女優</label><input id="actress" placeholder="例：七瀬アリス"></div><div><label>メーカー</label><input id="maker" placeholder="例：S1 / MOODYZ"></div></div>
+        <div class="row"><div><label>動画秒数</label><input id="seconds" type="number" inputmode="decimal" placeholder="例：8"></div><div><label>有償RP</label><select id="paidRp"><option value="なし">なし</option><option value="あり">あり</option></select></div></div>
+        <div class="row"><div><label>インプレッション</label><input id="imp" type="number" inputmode="numeric"></div><div><label>いいね</label><input id="likes" type="number" inputmode="numeric"></div></div>
+        <div class="row"><div><label>RP</label><input id="rp" type="number" inputmode="numeric"></div><div><label>ブックマーク</label><input id="bm" type="number" inputmode="numeric"></div></div>
+        <div class="row"><div><label>クリック</label><input id="clicks" type="number" inputmode="numeric"></div><div><label>売上</label><input id="sales" type="number" inputmode="numeric"></div></div>
+        <div class="full"><label>メモ</label><textarea id="memo" placeholder="例：24時間経過 / セール品 / 有償RP22時開始"></textarea></div>
+      </div>
+      <div class="actions"><button onclick="savePost()">保存する</button><button class="ghost" onclick="clearForm()">入力リセット</button></div>
+    </div>
+  </section>
+
+  <section id="analysis" class="page hidden"><div class="section-title">分析</div><div class="card" id="analysisBox"></div><div class="section-title">ランキング</div><div class="card" id="rankingBox"></div></section>
+  <section id="list" class="page hidden"><div class="section-title">投稿一覧</div><div class="card scroll"><table><thead><tr><th>日付</th><th>型</th><th>imp</th><th>CL</th><th>売上</th><th>評価</th><th></th></tr></thead><tbody id="postRows"></tbody></table></div></section>
+  <section id="data" class="page hidden"><div class="section-title">データ管理</div><div class="card"><p class="hint">CSV出力でバックアップ。別端末へ移す時はCSVを読み込む。</p><div class="actions"><button onclick="exportCSV()">CSV出力</button><label class="ghost small" style="display:inline-block;color:#111827;border-radius:14px;padding:12px 14px;font-weight:800">CSV読込<input type="file" accept=".csv" style="display:none" onchange="importCSV(event)"></label><button class="danger" onclick="resetAll()">全削除</button></div></div><div class="card"><div class="section-title" style="margin-top:0">GitHub Pages用メモ</div><p class="hint">このファイル名を <b>index.html</b> にしてGitHubへアップロードすれば公開できる。データはブラウザ内保存なので、URLを公開しても他人には入力データは見えない。</p></div></section>
+</main>
+<nav class="tabs"><button class="tab active" onclick="show('home',this)">ホーム</button><button class="tab" onclick="show('input',this)">入力</button><button class="tab" onclick="show('analysis',this)">分析</button><button class="tab" onclick="show('list',this)">一覧</button><button class="tab" onclick="show('data',this)">管理</button></nav>
+<script>
+const KEY='fanzaDashboardPostsV1';
+let posts=JSON.parse(localStorage.getItem(KEY)||'null')||[
+ {date:'2026-06-01',time:'',type:'運用記録',copyType:'',actress:'',maker:'',seconds:'',paidRp:'なし',imp:'',likes:'',rp:'',bm:'',clicks:'',sales:'',memo:'フォロワー約1100人。朝夜2回投稿期。'},
+ {date:'2026-06-02',time:'',type:'運用記録',copyType:'',actress:'',maker:'',seconds:'',paidRp:'なし',imp:'',likes:'',rp:'',bm:'',clicks:'',sales:'',memo:'フォロワー約1300人。伸ばす投稿と売る投稿の分離を開始。'},
+ {date:'2026-06-11',time:'',type:'運用記録',copyType:'',actress:'',maker:'',seconds:'',paidRp:'なし',imp:'',likes:'',rp:'',bm:'',clicks:'',sales:'',memo:'1日5投稿リンク付き運用を確認。'},
+ {date:'2026-06-20',time:'',type:'運用記録',copyType:'',actress:'',maker:'',seconds:'',paidRp:'なし',imp:'',likes:'',rp:'',bm:'',clicks:'',sales:'',memo:'フォロワー約1600人。クリック減少、フォロワー増加フェーズ。'},
+ {date:'2026-07-06',time:'22:00',type:'有償RPあり',copyType:'検証中',actress:'',maker:'',seconds:'',paidRp:'あり',imp:'',likes:'',rp:'',bm:'',clicks:'',sales:'',memo:'有償RPは22時から開始。'}
+];
+function n(v){return Number(v)||0}function yen(v){return '¥'+n(v).toLocaleString()}function pct(a,b){return b?((a/b)*100).toFixed(2)+'%':'-'}function save(){localStorage.setItem(KEY,JSON.stringify(posts));render()}
+function grade(p){let imp=n(p.imp),cl=n(p.clicks),sales=n(p.sales),er=(n(p.likes)+n(p.rp)*2+n(p.bm)*2)/(imp||1),ctr=cl/(imp||1);let score=0;if(imp>=5000)score+=30;else if(imp>=2000)score+=22;else if(imp>=1000)score+=14;else if(imp>0)score+=7;if(ctr>=.03)score+=30;else if(ctr>=.015)score+=22;else if(ctr>=.005)score+=12;if(er>=.03)score+=20;else if(er>=.015)score+=14;else if(er>=.006)score+=8;if(sales>0)score+=20;if(score>=80)return 'S';if(score>=65)return 'A';if(score>=45)return 'B';if(score>=25)return 'C';return 'D'}
+function show(id,el){document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');render()}
+function savePost(){const ids=['date','time','type','copyType','actress','maker','seconds','paidRp','imp','likes','rp','bm','clicks','sales','memo'];let p={};ids.forEach(id=>p[id]=document.getElementById(id).value);if(!p.date)p.date=new Date().toISOString().slice(0,10);posts.unshift(p);clearForm();save();alert('保存したよ')}
+function clearForm(){['date','time','actress','maker','seconds','imp','likes','rp','bm','clicks','sales','memo'].forEach(id=>document.getElementById(id).value='');document.getElementById('paidRp').value='なし'}
+function del(i){if(confirm('削除する？')){posts.splice(i,1);save()}}
+function agg(key){let m={};posts.forEach(p=>{let k=p[key]||'未入力';if(!m[k])m[k]={count:0,imp:0,clicks:0,sales:0};m[k].count++;m[k].imp+=n(p.imp);m[k].clicks+=n(p.clicks);m[k].sales+=n(p.sales)});return Object.entries(m).sort((a,b)=>b[1].clicks-a[1].clicks||b[1].imp-a[1].imp)}
+function render(){let total={imp:0,clicks:0,sales:0};posts.forEach(p=>{total.imp+=n(p.imp);total.clicks+=n(p.clicks);total.sales+=n(p.sales)});mPosts.textContent=posts.length;mImp.textContent=total.imp.toLocaleString();mClicks.textContent=total.clicks.toLocaleString();mSales.textContent=yen(total.sales);
+ let measured=posts.filter(p=>n(p.imp)||n(p.clicks)||n(p.sales));advice.innerHTML= measured.length?`現在のCTRは <b>${pct(total.clicks,total.imp)}</b>。まずは投稿ごとにimpとクリックだけでも入れると、型別の勝ち負けが見える。`: 'まだ数値データが少ない。今日から「imp・クリック・売上」だけ入れればOK。過去分は伸びた投稿・売れた投稿だけ追加で十分。';
+ recent.innerHTML=posts.slice(0,5).map((p,i)=>`<div class="list-item"><div><b>${p.date||''} ${p.time||''}</b><br><span class="muted">${p.type||''} / ${p.copyType||''}</span><div class="hint note">${p.memo||''}</div></div><div class="right"><span class="grade ${grade(p)}">${grade(p)}</span><br><span class="muted">${n(p.imp).toLocaleString()}imp</span></div></div>`).join('')||'なし';
+ postRows.innerHTML=posts.map((p,i)=>`<tr><td>${p.date}<br><span class="muted">${p.time||''}</span></td><td>${p.type}<br><span class="muted">${p.copyType||''}</span></td><td>${n(p.imp).toLocaleString()}</td><td>${n(p.clicks)}</td><td>${yen(p.sales)}</td><td><span class="grade ${grade(p)}">${grade(p)}</span></td><td><button class="danger small" onclick="del(${i})">削除</button></td></tr>`).join('');
+ analysisBox.innerHTML=`<p><span class="pill">CTR ${pct(total.clicks,total.imp)}</span><span class="pill">平均imp ${posts.length?Math.round(total.imp/posts.length).toLocaleString():0}</span><span class="pill">投稿あたり売上 ${yen(posts.length?Math.round(total.sales/posts.length):0)}</span></p><p class="hint">評価は imp・CTR・反応率・売上を合算した目安。売る投稿はクリック/売上、伸ばす投稿はimp/反応率を見る。</p>`;
+ const groups=[['投稿タイプ','type'],['投稿文タイプ','copyType'],['女優','actress'],['メーカー','maker'],['有償RP','paidRp']];rankingBox.innerHTML=groups.map(([title,key])=>`<b>${title}</b>`+agg(key).slice(0,5).map(([k,v])=>`<div class="list-item"><div>${k}<br><span class="muted">${v.count}件 / CTR ${pct(v.clicks,v.imp)}</span><div class="bar"><span style="width:${Math.min(100,v.imp/100)}%"></span></div></div><div class="right">${v.imp.toLocaleString()}imp<br>${v.clicks}CL<br>${yen(v.sales)}</div></div>`).join('')).join('<br>')}
+function exportCSV(){let cols=['date','time','type','copyType','actress','maker','seconds','paidRp','imp','likes','rp','bm','clicks','sales','memo'];let csv=[cols.join(',')].concat(posts.map(p=>cols.map(c=>'"'+String(p[c]??'').replaceAll('"','""')+'"').join(','))).join('\n');let blob=new Blob([csv],{type:'text/csv;charset=utf-8'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='fanza-dashboard.csv';a.click()}
+function parseCSV(t){let rows=[],row=[],cur='',q=false;for(let i=0;i<t.length;i++){let ch=t[i],nx=t[i+1];if(ch=='"'&&q&&nx=='"'){cur+='"';i++}else if(ch=='"'){q=!q}else if(ch==','&&!q){row.push(cur);cur=''}else if((ch=='\n'||ch=='\r')&&!q){if(cur||row.length){row.push(cur);rows.push(row);row=[];cur=''}if(ch=='\r'&&nx=='\n')i++}else cur+=ch}if(cur||row.length){row.push(cur);rows.push(row)}return rows}
+function importCSV(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let rows=parseCSV(r.result);let cols=rows.shift();posts=rows.map(row=>Object.fromEntries(cols.map((c,i)=>[c,row[i]||'']))).concat(posts);save();alert('読み込んだよ')};r.readAsText(f)}
+function resetAll(){if(confirm('全部消す？CSVバックアップ推奨。')){posts=[];save()}}
+document.getElementById('date').value=new Date().toISOString().slice(0,10);render();
+</script>
+</body>
+</html>
