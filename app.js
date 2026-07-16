@@ -7,7 +7,9 @@ const results = $("results");
 const template = $("cardTemplate");
 
 function asArray(value) {
-  return Array.isArray(value) ? value : [];
+  if (Array.isArray(value)) return value;
+  if (value == null) return [];
+  return [value];
 }
 
 function getItemInfoNames(product, key) {
@@ -16,22 +18,76 @@ function getItemInfoNames(product, key) {
     .filter(Boolean);
 }
 
-function getPrice(product) {
-  const value =
-    product?.prices?.price ??
-    product?.prices?.deliveries?.delivery?.[0]?.price ??
-    0;
+function toNumber(value) {
+  if (value == null) return 0;
+  return Number(String(value).replace(/[^\d]/g, "")) || 0;
+}
 
-  return Number(String(value).replace(/,/g, "")) || 0;
+function getDeliveries(product) {
+  return asArray(product?.prices?.deliveries?.delivery);
+}
+
+function getPrice(product) {
+  const directPrice = toNumber(product?.prices?.price);
+  if (directPrice > 0) return directPrice;
+
+  const deliveryPrices = getDeliveries(product)
+    .map((delivery) => toNumber(delivery?.price))
+    .filter((price) => price > 0);
+
+  return deliveryPrices.length ? Math.min(...deliveryPrices) : 0;
 }
 
 function getListPrice(product) {
-  const value =
-    product?.prices?.list_price ??
-    product?.prices?.deliveries?.delivery?.[0]?.list_price ??
-    0;
+  const directPrice = toNumber(product?.prices?.list_price);
+  if (directPrice > 0) return directPrice;
 
-  return Number(String(value).replace(/,/g, "")) || 0;
+  const deliveryPrices = getDeliveries(product)
+    .map((delivery) => toNumber(delivery?.list_price))
+    .filter((price) => price > 0);
+
+  return deliveryPrices.length ? Math.max(...deliveryPrices) : 0;
+}
+
+function addImageCandidate(list, value) {
+  if (
+    typeof value === "string" &&
+    value.startsWith("http") &&
+    !list.includes(value)
+  ) {
+    list.push(value);
+  }
+}
+
+function getImageCandidates(product) {
+  const images = [];
+
+  addImageCandidate(images, product?.imageURL?.large);
+  addImageCandidate(images, product?.imageURL?.list);
+  addImageCandidate(images, product?.imageURL?.small);
+
+  asArray(product?.sampleImageURL?.sample_l?.image).forEach((url) => {
+    addImageCandidate(images, url);
+  });
+
+  asArray(product?.sampleImageURL?.sample_s?.image).forEach((url) => {
+    addImageCandidate(images, url);
+  });
+
+  const isPlaceholder = (url) => {
+    const lower = String(url).toLowerCase();
+
+    return (
+      lower.includes("now_printing") ||
+      lower.includes("nowprinting") ||
+      lower.includes("noimage")
+    );
+  };
+
+  return [
+    ...images.filter((url) => !isPlaceholder(url)),
+    ...images.filter(isPlaceholder),
+  ];
 }
 
 function isNewProduct(product) {
@@ -51,7 +107,6 @@ function normalizeProduct(product) {
 
   const price = getPrice(product);
   const listPrice = getListPrice(product);
-
   const tags = [];
 
   if (isNewProduct(product)) tags.push("新作");
@@ -63,7 +118,7 @@ function normalizeProduct(product) {
   });
 
   return {
-    id: product.content_id || product.product_id,
+    id: product.content_id || product.product_id || product.URL,
     title: product.title || "タイトルなし",
     maker: makers[0] || "メーカー不明",
     genres,
@@ -77,11 +132,7 @@ function normalizeProduct(product) {
       : genres.length
         ? `ジャンル：${genres.slice(0, 4).join("、")}`
         : "作品情報",
-    image:
-      product?.imageURL?.large ||
-      product?.imageURL?.list ||
-      product?.imageURL?.small ||
-      "",
+    images: getImageCandidates(product),
     url: product.affiliateURL || product.URL || "#",
   };
 }
@@ -137,6 +188,40 @@ function showMessage(message) {
   `;
 }
 
+function setProductImage(product, placeholder) {
+  if (!product.images.length) {
+    placeholder.textContent = "画像なし";
+    return;
+  }
+
+  const image = document.createElement("img");
+  image.alt = product.title;
+  image.loading = "lazy";
+  image.decoding = "async";
+  image.style.width = "100%";
+  image.style.height = "100%";
+  image.style.objectFit = "cover";
+
+  let imageIndex = 0;
+
+  function loadNextImage() {
+    if (imageIndex >= product.images.length) {
+      const fallback = document.createElement("div");
+      fallback.className = "placeholder";
+      fallback.textContent = "画像なし";
+      image.replaceWith(fallback);
+      return;
+    }
+
+    image.src = product.images[imageIndex];
+    imageIndex += 1;
+  }
+
+  image.addEventListener("error", loadNextImage);
+  placeholder.replaceWith(image);
+  loadNextImage();
+}
+
 async function fetchProducts() {
   const keyword = $("keyword").value.trim();
 
@@ -167,6 +252,7 @@ async function fetchProducts() {
   } catch (error) {
     console.error(error);
     $("resultCount").textContent = "0";
+
     showMessage(
       `作品情報を取得できませんでした。<br><small>${error.message}</small>`
     );
@@ -211,18 +297,7 @@ function render() {
     node.querySelector("h3").textContent = product.title;
     node.querySelector(".description").textContent = product.description;
 
-    const placeholder = node.querySelector(".placeholder");
-
-    if (product.image) {
-      const image = document.createElement("img");
-      image.src = product.image;
-      image.alt = product.title;
-      image.loading = "lazy";
-      image.style.width = "100%";
-      image.style.height = "100%";
-      image.style.objectFit = "cover";
-      placeholder.replaceWith(image);
-    }
+    setProductImage(product, node.querySelector(".placeholder"));
 
     const tags = node.querySelector(".tags");
 
@@ -234,7 +309,7 @@ function render() {
 
     node.querySelector(".price").textContent =
       product.price > 0
-        ? `¥${product.price.toLocaleString()}`
+        ? `¥${product.price.toLocaleString()}〜`
         : "価格はFANZAで確認";
 
     node.querySelector(".rating").textContent =
@@ -254,6 +329,8 @@ function render() {
 
     const detailLink = node.querySelector(".detail-link");
     detailLink.href = product.url;
+    detailLink.target = "_blank";
+    detailLink.rel = "noopener noreferrer sponsored";
 
     results.appendChild(node);
   });
