@@ -659,9 +659,12 @@ function render() {
 
   const sort =
     $("sortFilter").value;
-
-  let filtered =
-    products.filter((product) => {
+  
+let filtered = showFavoritesOnly
+  ? products.filter((product) =>
+      favorites.includes(product.id)
+    )
+  : products.filter((product) => {
       return (
         (
           !genre ||
@@ -677,7 +680,7 @@ function render() {
         )
       );
     });
-
+  
   filtered.sort((a, b) => {
     if (sort === "priceLow") {
       return a.price - b.price;
@@ -977,31 +980,22 @@ $("resetBtn").addEventListener(
   }
 );
 
-$("favoritesBtn").addEventListener(
-  "click",
-  () => {
-    const favoriteProducts =
-      products.filter((product) =>
-        favorites.includes(
-          product.id
-        )
-      );
+let showFavoritesOnly = false;
 
-    const names =
-      favoriteProducts.map(
-        (product) =>
-          product.title
-      );
+$("favoritesBtn").addEventListener("click", () => {
+  showFavoritesOnly = !showFavoritesOnly;
 
-    alert(
-      names.length
-        ? `お気に入り\n\n${names.join(
-            "\n"
-          )}`
-        : "お気に入りはまだありません"
-    );
-  }
-);
+  $("favoritesBtn").textContent = showFavoritesOnly
+    ? "♡ すべて表示"
+    : `♡ お気に入り ${favorites.length}`;
+
+  render();
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+});
 
 $("enterBtn").addEventListener(
   "click",
