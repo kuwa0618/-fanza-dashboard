@@ -330,7 +330,50 @@ async function fetchProducts(append = false) {
     isLoadingMore = false;
   }
 }
+function setActressLinks(product, descriptionElement) {
+  descriptionElement.innerHTML = "";
 
+  if (!product.actresses.length) {
+    descriptionElement.textContent = product.description;
+    return;
+  }
+
+  const label = document.createElement("span");
+  label.textContent = "出演：";
+  descriptionElement.appendChild(label);
+
+  product.actresses.slice(0, 6).forEach((actress, index) => {
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.textContent = actress;
+
+    button.style.border = "0";
+    button.style.background = "transparent";
+    button.style.padding = "0";
+    button.style.color = "#333";
+    button.style.font = "inherit";
+    button.style.textDecoration = "underline";
+    button.style.cursor = "pointer";
+
+    button.addEventListener("click", () => {
+      $("keyword").value = actress;
+      fetchProducts(false);
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    });
+
+    descriptionElement.appendChild(button);
+
+    if (index < Math.min(product.actresses.length, 6) - 1) {
+      descriptionElement.appendChild(
+        document.createTextNode("、")
+      );
+    }
+  });
+}
 function render() {
   const genre = $("genreFilter").value;
   const maker = $("makerFilter").value;
@@ -364,8 +407,12 @@ function render() {
       `${product.maker}${product.date ? ` / ${product.date.slice(0, 10)}` : ""}`;
 
     node.querySelector("h3").textContent = product.title;
-    node.querySelector(".description").textContent = product.description;
+  　node.querySelector("h3").textContent = product.title;
 
+setActressLinks(
+  product,
+  node.querySelector(".description")
+);
     setProductImage(product, node.querySelector(".placeholder"));
 
     const tags = node.querySelector(".tags");
