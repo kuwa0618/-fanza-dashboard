@@ -205,7 +205,15 @@ function setProductImage(product, placeholder) {
   image.style.width = "100%";
   image.style.height = "100%";
   image.style.objectFit = "cover";
+　image.style.cursor = "pointer";
 
+　image.addEventListener("click", () => {
+  　window.open(
+    　product.url,
+   　 "_blank",
+   　 "noopener,noreferrer"
+  );
+});
   let imageIndex = 0;
 
   function loadNextImage() {
