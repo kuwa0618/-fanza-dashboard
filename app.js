@@ -364,15 +364,9 @@ function setActressLinks(product, descriptionElement) {
     button.style.textDecoration = "underline";
     button.style.cursor = "pointer";
 
-    button.addEventListener("click", () => {
-      $("keyword").value = actress;
-      fetchProducts(false);
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
-    });
-
+   button.addEventListener("click", () => {
+  openActressPage(actress);
+});
     descriptionElement.appendChild(button);
 
     if (index < Math.min(product.actresses.length, 6) - 1) {
@@ -391,7 +385,34 @@ function searchByKeyword(keyword) {
     behavior: "smooth",
   });
 }
+function openActressPage(actress) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("actress", actress);
 
+  history.pushState(
+    { actress },
+    "",
+    url
+  );
+
+  document.title =
+    `${actress}の作品一覧 | FANZA作品発見サイト`;
+
+  const heading = document.querySelector("h1");
+
+  if (heading) {
+    heading.textContent =
+      `${actress}の作品を見つける`;
+  }
+
+  $("keyword").value = actress;
+  fetchProducts(false);
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+}
 function createSearchButton(text) {
   const button = document.createElement("button");
 
@@ -591,5 +612,21 @@ $("leaveBtn").addEventListener("click", () => {
 if (localStorage.getItem("ageConfirmed") === "1") {
   $("ageGate").classList.add("hidden");
 }
+const actressFromUrl =
+  new URLSearchParams(window.location.search)
+    .get("actress");
 
+if (actressFromUrl) {
+  $("keyword").value = actressFromUrl;
+
+  document.title =
+    `${actressFromUrl}の作品一覧 | FANZA作品発見サイト`;
+
+  const heading = document.querySelector("h1");
+
+  if (heading) {
+    heading.textContent =
+      `${actressFromUrl}の作品を見つける`;
+  }
+}
 fetchProducts(false);
