@@ -445,7 +445,7 @@ if (product.date) {
 }
 
     node.querySelector("h3").textContent = product.title;
-  　node.querySelector("h3").textContent = product.title;
+
 
 setActressLinks(
   product,
