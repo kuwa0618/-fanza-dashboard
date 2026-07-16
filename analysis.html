@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>投稿分析</title>
+  <title>投稿インサイト分析</title>
 
   <style>
     * {
@@ -67,6 +67,13 @@
       margin-bottom: 20px;
     }
 
+    .two-column {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
     .card {
       padding: 22px;
       background: #ffffff;
@@ -87,6 +94,100 @@
       line-height: 1;
     }
 
+    .ranking-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .ranking-item {
+      padding: 14px;
+      background: #f8f9fb;
+      border-radius: 12px;
+    }
+
+    .ranking-head {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .rank-number {
+      font-weight: 800;
+    }
+
+    .ranking-value {
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .post-text {
+      overflow-wrap: anywhere;
+      line-height: 1.55;
+      font-weight: 650;
+    }
+
+    .post-meta {
+      margin-top: 8px;
+      color: #656b76;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .hour-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .hour-row {
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr) 70px;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .bar-area {
+      height: 13px;
+      overflow: hidden;
+      background: #e8eaf0;
+      border-radius: 999px;
+    }
+
+    .bar {
+      height: 100%;
+      background: #171717;
+      border-radius: 999px;
+    }
+
+    .detail-table {
+      width: 100%;
+      min-width: 1150px;
+      border-collapse: collapse;
+    }
+
+    .detail-table th,
+    .detail-table td {
+      padding: 12px 10px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid #eceef2;
+    }
+
+    .detail-table th {
+      color: #656b76;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .detail-table td {
+      font-size: 14px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
     .controls {
       display: flex;
       gap: 12px;
@@ -94,8 +195,8 @@
       margin-bottom: 18px;
     }
 
-    select,
-    input {
+    .controls input,
+    .controls select {
       padding: 10px 12px;
       font: inherit;
       border: 1px solid #cfd3da;
@@ -103,65 +204,24 @@
       background: #ffffff;
     }
 
-    input {
+    .controls input {
       min-width: 260px;
       flex: 1;
     }
 
-    .table-wrap {
-      overflow-x: auto;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 1100px;
-    }
-
-    th,
-    td {
-      padding: 12px 10px;
-      text-align: left;
-      vertical-align: top;
-      border-bottom: 1px solid #eceef2;
-    }
-
-    th {
-      color: #656b76;
-      font-size: 13px;
-      white-space: nowrap;
-    }
-
-    td {
-      font-size: 14px;
-    }
-
-    .post-text {
-      min-width: 320px;
-      max-width: 430px;
-      overflow-wrap: anywhere;
-      line-height: 1.6;
-    }
-
-    .number {
-      white-space: nowrap;
-    }
-
-    .rate {
-      font-weight: 700;
-      white-space: nowrap;
-    }
-
-    .good {
+    .rate-good {
       color: #116329;
+      font-weight: 800;
     }
 
-    .average {
+    .rate-average {
       color: #8a5a00;
+      font-weight: 800;
     }
 
-    .low {
+    .rate-low {
       color: #b42318;
+      font-weight: 800;
     }
 
     .empty,
@@ -187,8 +247,9 @@
         flex-direction: column;
       }
 
-      .summary-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+      .summary-grid,
+      .two-column {
+        grid-template-columns: 1fr;
       }
 
       .header-links {
@@ -206,7 +267,7 @@
 <body>
   <main class="container">
     <header class="header">
-      <h1>📈 投稿分析</h1>
+      <h1>📊 投稿インサイト分析</h1>
 
       <div class="header-links">
         <a href="/post-form.html" class="link-button">投稿を登録</a>
@@ -219,27 +280,51 @@
     <section class="summary-grid">
       <div class="card">
         <div class="summary-label">登録投稿数</div>
-        <div id="totalPosts" class="summary-number">0</div>
+        <div id="summaryPosts" class="summary-number">0</div>
       </div>
 
       <div class="card">
         <div class="summary-label">総インプレッション</div>
-        <div id="totalImpressions" class="summary-number">0</div>
+        <div id="summaryImpressions" class="summary-number">0</div>
       </div>
 
       <div class="card">
         <div class="summary-label">総リンククリック</div>
-        <div id="totalLinkClicks" class="summary-number">0</div>
+        <div id="summaryClicks" class="summary-number">0</div>
       </div>
 
       <div class="card">
         <div class="summary-label">全体クリック率</div>
-        <div id="totalClickRate" class="summary-number">0%</div>
+        <div id="summaryRate" class="summary-number">0%</div>
+      </div>
+    </section>
+
+    <section class="two-column">
+      <div class="card">
+        <h2>🏆 クリック率ランキング</h2>
+        <div id="clickRateRanking" class="ranking-list"></div>
+      </div>
+
+      <div class="card">
+        <h2>🔥 インプレッションランキング</h2>
+        <div id="impressionRanking" class="ranking-list"></div>
+      </div>
+    </section>
+
+    <section class="two-column">
+      <div class="card">
+        <h2>🔗 リンククリックランキング</h2>
+        <div id="linkClickRanking" class="ranking-list"></div>
+      </div>
+
+      <div class="card">
+        <h2>🕒 投稿時間帯別クリック率</h2>
+        <div id="hourlyPerformance" class="hour-list"></div>
       </div>
     </section>
 
     <section class="card">
-      <h2>投稿一覧</h2>
+      <h2>投稿詳細</h2>
 
       <div class="controls">
         <input
@@ -249,42 +334,42 @@
         />
 
         <select id="sortSelect">
-          <option value="posted_at_desc">投稿日が新しい順</option>
-          <option value="impressions_desc">インプレッション順</option>
-          <option value="link_clicks_desc">リンククリック順</option>
-          <option value="click_rate_desc">クリック率順</option>
-          <option value="likes_desc">いいね順</option>
-          <option value="reposts_desc">RP順</option>
-          <option value="bookmarks_desc">ブックマーク順</option>
+          <option value="click_rate_desc">クリック率が高い順</option>
+          <option value="impressions_desc">インプレッションが多い順</option>
+          <option value="link_clicks_desc">リンククリックが多い順</option>
+          <option value="like_rate_desc">いいね率が高い順</option>
+          <option value="repost_rate_desc">RP率が高い順</option>
+          <option value="bookmark_rate_desc">ブックマーク率が高い順</option>
+          <option value="posted_at_desc">投稿日時が新しい順</option>
         </select>
       </div>
 
       <div class="table-wrap">
-        <table>
+        <table class="detail-table">
           <thead>
             <tr>
-              <th>投稿日</th>
+              <th>投稿日時</th>
               <th>投稿ID</th>
               <th>投稿文</th>
               <th>インプレッション</th>
-              <th>いいね</th>
-              <th>RP</th>
-              <th>ブックマーク</th>
-              <th>返信</th>
-              <th>プロフィールクリック</th>
               <th>リンククリック</th>
               <th>クリック率</th>
+              <th>いいね率</th>
+              <th>RP率</th>
+              <th>保存率</th>
+              <th>返信率</th>
+              <th>プロフィールクリック率</th>
             </tr>
           </thead>
 
-          <tbody id="postTableBody"></tbody>
+          <tbody id="detailTableBody"></tbody>
         </table>
       </div>
     </section>
   </main>
 
   <script>
-    let posts = [];
+    let allPosts = [];
 
     function escapeHtml(value) {
       return String(value ?? "")
@@ -311,13 +396,108 @@
       return date.toLocaleString("ja-JP");
     }
 
-    function getRateClass(rate) {
-      if (rate >= 3) return "good";
-      if (rate >= 1) return "average";
-      return "low";
+    function rateClass(rate) {
+      const value = Number(rate || 0);
+
+      if (value >= 3) return "rate-good";
+      if (value >= 1) return "rate-average";
+      return "rate-low";
     }
 
-    function renderPosts() {
+    function renderRanking(elementId, items, type) {
+      const element = document.getElementById(elementId);
+
+      if (!items.length) {
+        element.innerHTML =
+          '<div class="empty">まだデータがありません</div>';
+        return;
+      }
+
+      element.innerHTML = items
+        .map((post, index) => {
+          let value = "";
+
+          if (type === "rate") {
+            value = `${Number(post.click_rate || 0).toFixed(2)}%`;
+          }
+
+          if (type === "impressions") {
+            value = `${formatNumber(post.impressions)}imp`;
+          }
+
+          if (type === "clicks") {
+            value = `${formatNumber(post.link_clicks)}クリック`;
+          }
+
+          return `
+            <div class="ranking-item">
+              <div class="ranking-head">
+                <div class="rank-number">${index + 1}</div>
+
+                <div class="post-text">
+                  ${escapeHtml(post.content || "投稿文なし")}
+                </div>
+
+                <div class="ranking-value">
+                  ${escapeHtml(value)}
+                </div>
+              </div>
+
+              <div class="post-meta">
+                投稿ID：${escapeHtml(post.post_id || "―")}<br>
+                投稿日時：${escapeHtml(formatDate(post.posted_at))}<br>
+                インプレッション：${formatNumber(post.impressions)} ／
+                リンククリック：${formatNumber(post.link_clicks)}
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    function renderHourly(items) {
+      const element = document.getElementById("hourlyPerformance");
+
+      if (!items.length) {
+        element.innerHTML =
+          '<div class="empty">まだデータがありません</div>';
+        return;
+      }
+
+      const maximum = Math.max(
+        ...items.map((item) => Number(item.average_click_rate || 0)),
+        1
+      );
+
+      element.innerHTML = items
+        .map((item) => {
+          const rate = Number(item.average_click_rate || 0);
+          const width = Math.max((rate / maximum) * 100, 4);
+
+          return `
+            <div class="hour-row">
+              <div>${escapeHtml(item.label)}</div>
+
+              <div class="bar-area">
+                <div class="bar" style="width:${width}%"></div>
+              </div>
+
+              <div>
+                <strong>${rate.toFixed(2)}%</strong>
+              </div>
+            </div>
+
+            <div class="post-meta" style="margin-top:-6px;margin-bottom:6px;">
+              ${formatNumber(item.posts)}投稿 ／
+              ${formatNumber(item.impressions)}imp ／
+              ${formatNumber(item.link_clicks)}クリック
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    function renderDetails() {
       const keyword = document
         .getElementById("searchInput")
         .value
@@ -326,14 +506,18 @@
 
       const sortValue = document.getElementById("sortSelect").value;
 
-      let filteredPosts = posts.filter((post) => {
-        const text = String(post.content || "").toLowerCase();
+      let posts = allPosts.filter((post) => {
+        const content = String(post.content || "").toLowerCase();
         const postId = String(post.post_id || "").toLowerCase();
 
-        return !keyword || text.includes(keyword) || postId.includes(keyword);
+        return (
+          !keyword ||
+          content.includes(keyword) ||
+          postId.includes(keyword)
+        );
       });
 
-      filteredPosts.sort((a, b) => {
+      posts.sort((a, b) => {
         if (sortValue === "impressions_desc") {
           return Number(b.impressions || 0) - Number(a.impressions || 0);
         }
@@ -342,28 +526,28 @@
           return Number(b.link_clicks || 0) - Number(a.link_clicks || 0);
         }
 
-        if (sortValue === "click_rate_desc") {
-          return Number(b.click_rate || 0) - Number(a.click_rate || 0);
+        if (sortValue === "like_rate_desc") {
+          return Number(b.like_rate || 0) - Number(a.like_rate || 0);
         }
 
-        if (sortValue === "likes_desc") {
-          return Number(b.likes || 0) - Number(a.likes || 0);
+        if (sortValue === "repost_rate_desc") {
+          return Number(b.repost_rate || 0) - Number(a.repost_rate || 0);
         }
 
-        if (sortValue === "reposts_desc") {
-          return Number(b.reposts || 0) - Number(a.reposts || 0);
+        if (sortValue === "bookmark_rate_desc") {
+          return Number(b.bookmark_rate || 0) - Number(a.bookmark_rate || 0);
         }
 
-        if (sortValue === "bookmarks_desc") {
-          return Number(b.bookmarks || 0) - Number(a.bookmarks || 0);
+        if (sortValue === "posted_at_desc") {
+          return new Date(b.posted_at || 0) - new Date(a.posted_at || 0);
         }
 
-        return new Date(b.posted_at || 0) - new Date(a.posted_at || 0);
+        return Number(b.click_rate || 0) - Number(a.click_rate || 0);
       });
 
-      const tableBody = document.getElementById("postTableBody");
+      const tableBody = document.getElementById("detailTableBody");
 
-      if (!filteredPosts.length) {
+      if (!posts.length) {
         tableBody.innerHTML = `
           <tr>
             <td colspan="11" class="empty">
@@ -374,58 +558,109 @@
         return;
       }
 
-      tableBody.innerHTML = filteredPosts
+      tableBody.innerHTML = posts
         .map((post) => {
           const clickRate = Number(post.click_rate || 0);
+          const likeRate = Number(post.like_rate || 0);
+          const repostRate = Number(post.repost_rate || 0);
+          const bookmarkRate = Number(post.bookmark_rate || 0);
+          const replyRate = Number(post.reply_rate || 0);
+          const profileRate = Number(post.profile_click_rate || 0);
 
           return `
             <tr>
-              <td class="number">${escapeHtml(formatDate(post.posted_at))}</td>
-              <td class="number">${escapeHtml(post.post_id || "―")}</td>
-              <td class="post-text">${escapeHtml(post.content || "―")}</td>
-              <td class="number">${formatNumber(post.impressions)}</td>
-              <td class="number">${formatNumber(post.likes)}</td>
-              <td class="number">${formatNumber(post.reposts)}</td>
-              <td class="number">${formatNumber(post.bookmarks)}</td>
-              <td class="number">${formatNumber(post.replies)}</td>
-              <td class="number">${formatNumber(post.profile_clicks)}</td>
-              <td class="number">${formatNumber(post.link_clicks)}</td>
-              <td class="rate ${getRateClass(clickRate)}">
+              <td>${escapeHtml(formatDate(post.posted_at))}</td>
+
+              <td>${escapeHtml(post.post_id || "―")}</td>
+
+              <td class="post-text">
+                ${escapeHtml(post.content || "―")}
+              </td>
+
+              <td>${formatNumber(post.impressions)}</td>
+
+              <td>${formatNumber(post.link_clicks)}</td>
+
+              <td class="${rateClass(clickRate)}">
                 ${clickRate.toFixed(2)}%
               </td>
+
+              <td>${likeRate.toFixed(2)}%</td>
+
+              <td>${repostRate.toFixed(2)}%</td>
+
+              <td>${bookmarkRate.toFixed(2)}%</td>
+
+              <td>${replyRate.toFixed(2)}%</td>
+
+              <td>${profileRate.toFixed(2)}%</td>
             </tr>
           `;
         })
         .join("");
     }
 
-    async function loadPosts() {
+    async function loadInsights() {
       try {
-        const response = await fetch("/api/posts", {
+        const response = await fetch("/api/insights", {
           cache: "no-store"
         });
 
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || "投稿分析データの取得に失敗しました");
+          throw new Error(
+            data.error || "インサイトデータの取得に失敗しました"
+          );
         }
 
-        posts = data.posts || [];
+        document.getElementById("summaryPosts").textContent =
+          formatNumber(data.summary?.posts);
 
-        document.getElementById("totalPosts").textContent =
-          formatNumber(data.totals?.posts);
+        document.getElementById("summaryImpressions").textContent =
+          formatNumber(data.summary?.impressions);
 
-        document.getElementById("totalImpressions").textContent =
-          formatNumber(data.totals?.impressions);
+        document.getElementById("summaryClicks").textContent =
+          formatNumber(data.summary?.link_clicks);
 
-        document.getElementById("totalLinkClicks").textContent =
-          formatNumber(data.totals?.linkClicks);
+        document.getElementById("summaryRate").textContent =
+          `${Number(data.summary?.click_rate || 0).toFixed(2)}%`;
 
-        document.getElementById("totalClickRate").textContent =
-          `${Number(data.totals?.clickRate || 0).toFixed(2)}%`;
+        renderRanking(
+          "clickRateRanking",
+          data.topByClickRate || [],
+          "rate"
+        );
 
-        renderPosts();
+        renderRanking(
+          "impressionRanking",
+          data.topByImpressions || [],
+          "impressions"
+        );
+
+        renderRanking(
+          "linkClickRanking",
+          data.topByLinkClicks || [],
+          "clicks"
+        );
+
+        renderHourly(data.hourlyPerformance || []);
+
+        const combinedPosts = [
+          ...(data.topByClickRate || []),
+          ...(data.topByImpressions || []),
+          ...(data.topByLinkClicks || [])
+        ];
+
+        const uniquePosts = new Map();
+
+        combinedPosts.forEach((post) => {
+          uniquePosts.set(post.id, post);
+        });
+
+        allPosts = Array.from(uniquePosts.values());
+
+        renderDetails();
       } catch (error) {
         document.getElementById("errorBox").innerHTML = `
           <div class="error">
@@ -437,13 +672,13 @@
 
     document
       .getElementById("searchInput")
-      .addEventListener("input", renderPosts);
+      .addEventListener("input", renderDetails);
 
     document
       .getElementById("sortSelect")
-      .addEventListener("change", renderPosts);
+      .addEventListener("change", renderDetails);
 
-    loadPosts();
+    loadInsights();
   </script>
 </body>
 </html>
