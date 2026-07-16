@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>投稿分析</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #171717;
+      background: #f5f6f8;
+    }
+
+    .container {
+      width: min(1280px, 100%);
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    h1,
+    h2 {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 30px;
+    }
+
+    h2 {
+      margin-bottom: 18px;
+      font-size: 21px;
+    }
+
+    .header-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .link-button {
+      padding: 10px 14px;
+      color: #171717;
+      text-decoration: none;
+      background: #ffffff;
+      border: 1px solid #d9dce2;
+      border-radius: 10px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      padding: 22px;
+      background: #ffffff;
+      border: 1px solid #e4e6eb;
+      border-radius: 16px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+    }
+
+    .summary-label {
+      margin-bottom: 10px;
+      color: #656b76;
+      font-size: 14px;
+    }
+
+    .summary-number {
+      font-size: 34px;
+      font-weight: 750;
+      line-height: 1;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    select,
+    input {
+      padding: 10px 12px;
+      font: inherit;
+      border: 1px solid #cfd3da;
+      border-radius: 10px;
+      background: #ffffff;
+    }
+
+    input {
+      min-width: 260px;
+      flex: 1;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1100px;
+    }
+
+    th,
+    td {
+      padding: 12px 10px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid #eceef2;
+    }
+
+    th {
+      color: #656b76;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    td {
+      font-size: 14px;
+    }
+
+    .post-text {
+      min-width: 320px;
+      max-width: 430px;
+      overflow-wrap: anywhere;
+      line-height: 1.6;
+    }
+
+    .number {
+      white-space: nowrap;
+    }
+
+    .rate {
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .good {
+      color: #116329;
+    }
+
+    .average {
+      color: #8a5a00;
+    }
+
+    .low {
+      color: #b42318;
+    }
+
+    .empty,
+    .error {
+      padding: 18px;
+      text-align: center;
+      color: #656b76;
+    }
+
+    .error {
+      color: #b42318;
+      background: #fff0ee;
+      border-radius: 12px;
+    }
+
+    @media (max-width: 800px) {
+      body {
+        padding: 16px;
+      }
+
+      .header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .header-links {
+        width: 100%;
+      }
+
+      .link-button {
+        flex: 1;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <header class="header">
+      <h1>📈 投稿分析</h1>
+
+      <div class="header-links">
+        <a href="/post-form.html" class="link-button">投稿を登録</a>
+        <a href="/dashboard.html" class="link-button">クリック分析へ戻る</a>
+      </div>
+    </header>
+
+    <div id="errorBox"></div>
+
+    <section class="summary-grid">
+      <div class="card">
+        <div class="summary-label">登録投稿数</div>
+        <div id="totalPosts" class="summary-number">0</div>
+      </div>
+
+      <div class="card">
+        <div class="summary-label">総インプレッション</div>
+        <div id="totalImpressions" class="summary-number">0</div>
+      </div>
+
+      <div class="card">
+        <div class="summary-label">総リンククリック</div>
+        <div id="totalLinkClicks" class="summary-number">0</div>
+      </div>
+
+      <div class="card">
+        <div class="summary-label">全体クリック率</div>
+        <div id="totalClickRate" class="summary-number">0%</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>投稿一覧</h2>
+
+      <div class="controls">
+        <input
+          id="searchInput"
+          type="search"
+          placeholder="投稿文・投稿IDで検索"
+        />
+
+        <select id="sortSelect">
+          <option value="posted_at_desc">投稿日が新しい順</option>
+          <option value="impressions_desc">インプレッション順</option>
+          <option value="link_clicks_desc">リンククリック順</option>
+          <option value="click_rate_desc">クリック率順</option>
+          <option value="likes_desc">いいね順</option>
+          <option value="reposts_desc">RP順</option>
+          <option value="bookmarks_desc">ブックマーク順</option>
+        </select>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>投稿日</th>
+              <th>投稿ID</th>
+              <th>投稿文</th>
+              <th>インプレッション</th>
+              <th>いいね</th>
+              <th>RP</th>
+              <th>ブックマーク</th>
+              <th>返信</th>
+              <th>プロフィールクリック</th>
+              <th>リンククリック</th>
+              <th>クリック率</th>
+            </tr>
+          </thead>
+
+          <tbody id="postTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let posts = [];
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function formatNumber(value) {
+      return Number(value || 0).toLocaleString("ja-JP");
+    }
+
+    function formatDate(value) {
+      if (!value) return "―";
+
+      const date = new Date(value);
+
+      if (Number.isNaN(date.getTime())) {
+        return "―";
+      }
+
+      return date.toLocaleString("ja-JP");
+    }
+
+    function getRateClass(rate) {
+      if (rate >= 3) return "good";
+      if (rate >= 1) return "average";
+      return "low";
+    }
+
+    function renderPosts() {
+      const keyword = document
+        .getElementById("searchInput")
+        .value
+        .trim()
+        .toLowerCase();
+
+      const sortValue = document.getElementById("sortSelect").value;
+
+      let filteredPosts = posts.filter((post) => {
+        const text = String(post.content || "").toLowerCase();
+        const postId = String(post.post_id || "").toLowerCase();
+
+        return !keyword || text.includes(keyword) || postId.includes(keyword);
+      });
+
+      filteredPosts.sort((a, b) => {
+        if (sortValue === "impressions_desc") {
+          return Number(b.impressions || 0) - Number(a.impressions || 0);
+        }
+
+        if (sortValue === "link_clicks_desc") {
+          return Number(b.link_clicks || 0) - Number(a.link_clicks || 0);
+        }
+
+        if (sortValue === "click_rate_desc") {
+          return Number(b.click_rate || 0) - Number(a.click_rate || 0);
+        }
+
+        if (sortValue === "likes_desc") {
+          return Number(b.likes || 0) - Number(a.likes || 0);
+        }
+
+        if (sortValue === "reposts_desc") {
+          return Number(b.reposts || 0) - Number(a.reposts || 0);
+        }
+
+        if (sortValue === "bookmarks_desc") {
+          return Number(b.bookmarks || 0) - Number(a.bookmarks || 0);
+        }
+
+        return new Date(b.posted_at || 0) - new Date(a.posted_at || 0);
+      });
+
+      const tableBody = document.getElementById("postTableBody");
+
+      if (!filteredPosts.length) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="11" class="empty">
+              条件に一致する投稿がありません
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tableBody.innerHTML = filteredPosts
+        .map((post) => {
+          const clickRate = Number(post.click_rate || 0);
+
+          return `
+            <tr>
+              <td class="number">${escapeHtml(formatDate(post.posted_at))}</td>
+              <td class="number">${escapeHtml(post.post_id || "―")}</td>
+              <td class="post-text">${escapeHtml(post.content || "―")}</td>
+              <td class="number">${formatNumber(post.impressions)}</td>
+              <td class="number">${formatNumber(post.likes)}</td>
+              <td class="number">${formatNumber(post.reposts)}</td>
+              <td class="number">${formatNumber(post.bookmarks)}</td>
+              <td class="number">${formatNumber(post.replies)}</td>
+              <td class="number">${formatNumber(post.profile_clicks)}</td>
+              <td class="number">${formatNumber(post.link_clicks)}</td>
+              <td class="rate ${getRateClass(clickRate)}">
+                ${clickRate.toFixed(2)}%
+              </td>
+            </tr>
+          `;
+        })
+        .join("");
+    }
+
+    async function loadPosts() {
+      try {
+        const response = await fetch("/api/posts", {
+          cache: "no-store"
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "投稿分析データの取得に失敗しました");
+        }
+
+        posts = data.posts || [];
+
+        document.getElementById("totalPosts").textContent =
+          formatNumber(data.totals?.posts);
+
+        document.getElementById("totalImpressions").textContent =
+          formatNumber(data.totals?.impressions);
+
+        document.getElementById("totalLinkClicks").textContent =
+          formatNumber(data.totals?.linkClicks);
+
+        document.getElementById("totalClickRate").textContent =
+          `${Number(data.totals?.clickRate || 0).toFixed(2)}%`;
+
+        renderPosts();
+      } catch (error) {
+        document.getElementById("errorBox").innerHTML = `
+          <div class="error">
+            ${escapeHtml(error.message)}
+          </div>
+        `;
+      }
+    }
+
+    document
+      .getElementById("searchInput")
+      .addEventListener("input", renderPosts);
+
+    document
+      .getElementById("sortSelect")
+      .addEventListener("change", renderPosts);
+
+    loadPosts();
+  </script>
+</body>
+</html>
