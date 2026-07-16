@@ -87,14 +87,14 @@ const res=await fetch("/api/stats");
 
 const data=await res.json();
 
-document.getElementById("all").innerText=data.all;
+document.getElementById("all").innerText = data.totals.all;
 
-document.getElementById("today").innerText=data.today;
+document.getElementById("today").innerText = data.totals.today;
 
-document.getElementById("week").innerText=data.sevenDays;
+document.getElementById("week").innerText = data.totals.sevenDays;
 
-document.getElementById("month").innerText=data.thirtyDays;
-
+document.getElementById("month").innerText = data.totals.thirtyDays;
+    
 const table=document.getElementById("ranking");
 
 data.topProducts.forEach((p,i)=>{
