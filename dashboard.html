@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>分析ダッシュボード</title>
+
+<style>
+body{
+    font-family:sans-serif;
+    background:#f5f5f5;
+    margin:30px;
+}
+
+.card{
+    background:white;
+    border-radius:12px;
+    padding:20px;
+    margin-bottom:20px;
+    box-shadow:0 2px 8px rgba(0,0,0,.1);
+}
+
+h1{
+    margin-bottom:20px;
+}
+
+.number{
+    font-size:34px;
+    font-weight:bold;
+    color:#2196f3;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+td,th{
+    padding:10px;
+    border-bottom:1px solid #ddd;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>📊 FANZA分析ダッシュボード</h1>
+
+<div class="card">
+<h2>クリック数</h2>
+
+<p>総クリック数</p>
+<div id="all" class="number">0</div>
+
+<p>今日</p>
+<div id="today" class="number">0</div>
+
+<p>7日</p>
+<div id="week" class="number">0</div>
+
+<p>30日</p>
+<div id="month" class="number">0</div>
+
+</div>
+
+<div class="card">
+
+<h2>人気作品</h2>
+
+<table id="ranking">
+
+<tr>
+<th>順位</th>
+<th>作品</th>
+<th>クリック</th>
+</tr>
+
+</table>
+
+</div>
+
+<script>
+
+async function load(){
+
+const res=await fetch("/api/stats");
+
+const data=await res.json();
+
+document.getElementById("all").innerText=data.all;
+
+document.getElementById("today").innerText=data.today;
+
+document.getElementById("week").innerText=data.sevenDays;
+
+document.getElementById("month").innerText=data.thirtyDays;
+
+const table=document.getElementById("ranking");
+
+data.topProducts.forEach((p,i)=>{
+
+table.innerHTML+=`
+<tr>
+<td>${i+1}</td>
+<td>${p.title}</td>
+<td>${p.clicks}</td>
+</tr>
+`;
+
+});
+
+}
+
+load();
+
+</script>
+
+</body>
+</html>
