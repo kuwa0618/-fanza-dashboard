@@ -398,7 +398,7 @@ function openActressPage(actress) {
   document.title =
     `${actress}の作品一覧 | FANZA作品発見サイト`;
 
-  const heading = document.querySelector("h1");
+ const heading = document.querySelector(".site-header h1");
 
   if (heading) {
     heading.textContent =
@@ -620,7 +620,7 @@ if (actressFromUrl) {
   document.title =
     `${actressFromUrl}の作品一覧 | FANZA作品発見サイト`;
 
-  const heading = document.querySelector("h1");
+ const heading = document.querySelector(".site-header h1");
 
   if (heading) {
     heading.textContent =
