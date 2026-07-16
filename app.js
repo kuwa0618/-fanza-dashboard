@@ -2,6 +2,10 @@ let products = [];
 let activeChip = "";
 let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
 
+let nextOffset = 1;
+let currentKeyword = "";
+let isLoadingMore = false;
+
 const $ = (id) => document.getElementById(id);
 const results = $("results");
 const template = $("cardTemplate");
@@ -221,21 +225,69 @@ function setProductImage(product, placeholder) {
   placeholder.replaceWith(image);
   loadNextImage();
 }
+function updateLoadMoreButton(show) {
+  let button = $("loadMoreBtn");
 
-async function fetchProducts() {
+  if (!button) {
+    button = document.createElement("button");
+    button.id = "loadMoreBtn";
+    button.type = "button";
+    button.textContent = "もっと見る";
+
+    button.style.display = "block";
+    button.style.margin = "32px auto";
+    button.style.padding = "14px 36px";
+    button.style.border = "0";
+    button.style.borderRadius = "999px";
+    button.style.background = "#111";
+    button.style.color = "#fff";
+    button.style.fontSize = "16px";
+    button.style.fontWeight = "700";
+    button.style.cursor = "pointer";
+
+    button.addEventListener("click", () => {
+      fetchProducts(true);
+    });
+
+    results.parentElement.appendChild(button);
+  }
+
+  button.style.display = show ? "block" : "none";
+  button.disabled = false;
+  button.textContent = "もっと見る";
+}
+async function fetchProducts(append = false) {
   const keyword = $("keyword").value.trim();
 
-  $("searchBtn").disabled = true;
-  $("searchBtn").textContent = "検索中";
-  showMessage("作品を読み込んでいます…");
+  if (!append) {
+    currentKeyword = keyword;
+    nextOffset = 1;
+    products = [];
+
+    $("searchBtn").disabled = true;
+    $("searchBtn").textContent = "検索中";
+    showMessage("作品を読み込んでいます…");
+  } else {
+    if (isLoadingMore) return;
+
+    isLoadingMore = true;
+
+    const loadMoreButton = $("loadMoreBtn");
+
+    if (loadMoreButton) {
+      loadMoreButton.disabled = true;
+      loadMoreButton.textContent = "読み込み中…";
+    }
+  }
 
   try {
     const params = new URLSearchParams({
       hits: "20",
+      offset: String(nextOffset),
     });
 
-    if (keyword) {
-      params.set("keyword", keyword);
+    if (currentKeyword) {
+      params.set("keyword", currentKeyword);
     }
 
     const response = await fetch(`/api/search?${params.toString()}`);
@@ -245,20 +297,37 @@ async function fetchProducts() {
       throw new Error(data.error || "作品情報を取得できませんでした。");
     }
 
-    products = asArray(data.products).map(normalizeProduct);
+    const newProducts = asArray(data.products).map(normalizeProduct);
+
+    products = append
+      ? [...products, ...newProducts]
+      : newProducts;
+
+    nextOffset += newProducts.length;
 
     updateFilters();
     render();
+
+    updateLoadMoreButton(
+      newProducts.length === 20 &&
+      products.length < Number(data.totalCount || 0)
+    );
   } catch (error) {
     console.error(error);
-    $("resultCount").textContent = "0";
 
-    showMessage(
-      `作品情報を取得できませんでした。<br><small>${error.message}</small>`
-    );
+    if (!append) {
+      $("resultCount").textContent = "0";
+
+      showMessage(
+        `作品情報を取得できませんでした。<br><small>${error.message}</small>`
+      );
+    } else {
+      alert(error.message);
+    }
   } finally {
     $("searchBtn").disabled = false;
     $("searchBtn").textContent = "検索";
+    isLoadingMore = false;
   }
 }
 
@@ -352,12 +421,14 @@ function toggleFavorite(id) {
   render();
 }
 
-$("searchBtn").addEventListener("click", fetchProducts);
+$("searchBtn").addEventListener("click", () => {
+  fetchProducts(false);
+});
 
 $("keyword").addEventListener("keydown", (event) => {
-  if (event.key === "Enter") {
-    fetchProducts();
-  }
+if (event.key === "Enter") {
+  fetchProducts(false);
+}
 });
 
 ["genreFilter", "makerFilter", "sortFilter"].forEach((id) => {
@@ -392,7 +463,7 @@ $("resetBtn").addEventListener("click", () => {
     button.classList.remove("active");
   });
 
-  fetchProducts();
+ fetchProducts(false);
 });
 
 $("favoritesBtn").addEventListener("click", () => {
@@ -422,4 +493,4 @@ if (localStorage.getItem("ageConfirmed") === "1") {
   $("ageGate").classList.add("hidden");
 }
 
-fetchProducts();
+fetchProducts(false);
