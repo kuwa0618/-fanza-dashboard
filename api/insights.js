@@ -102,7 +102,7 @@ export default async function handler(req, res) {
 
       if (Number.isNaN(date.getTime())) return;
 
-      const hour = date.getHours();
+      const hour = (date.getUTCHours() + 9) % 24;
       const key = `${hour}時台`;
 
       if (!hourMap[key]) {
