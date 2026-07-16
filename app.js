@@ -824,7 +824,23 @@ let filtered = showFavoritesOnly
 
     detailLink.rel =
       "noopener noreferrer sponsored";
-
+    detailLink.addEventListener("click", () => {
+      fetch("/api/click", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      content_id: product.id,
+      title: product.title,
+      actress: product.actresses?.join(", ") || "",
+      maker: product.maker || "",
+      genre: product.genres?.join(", ") || "",
+    }),
+  }).catch((error) => {
+    console.error("クリック記録に失敗しました:", error);
+  });
+});
     results.appendChild(node);
   });
 
