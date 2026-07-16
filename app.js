@@ -583,24 +583,6 @@ $("resetBtn").addEventListener("click", () => {
   document.querySelectorAll("[data-chip]").forEach((button) => {
     button.classList.remove("active");
   });
-const actressFromUrl =
-  new URLSearchParams(window.location.search).get("actress");
-
-if (actressFromUrl) {
-  $("keyword").value = actressFromUrl;
-
-  document.title =
-    `${actressFromUrl}の作品一覧 | FANZA作品発見サイト`;
-
-  const heading = document.querySelector("h1");
-
-  if (heading) {
-    heading.textContent =
-      `${actressFromUrl}の作品を見つける`;
-  }
-}
- fetchProducts(false);
-});
 
 $("favoritesBtn").addEventListener("click", () => {
   showFavoritesOnly = !showFavoritesOnly;
