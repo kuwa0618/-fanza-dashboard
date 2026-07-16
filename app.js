@@ -374,6 +374,36 @@ function setActressLinks(product, descriptionElement) {
     }
   });
 }
+function searchByKeyword(keyword) {
+  $("keyword").value = keyword;
+  fetchProducts(false);
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+}
+
+function createSearchButton(text) {
+  const button = document.createElement("button");
+
+  button.type = "button";
+  button.textContent = text;
+
+  button.style.border = "0";
+  button.style.background = "transparent";
+  button.style.padding = "0";
+  button.style.color = "inherit";
+  button.style.font = "inherit";
+  button.style.textDecoration = "underline";
+  button.style.cursor = "pointer";
+
+  button.addEventListener("click", () => {
+    searchByKeyword(text);
+  });
+
+  return button;
+}
 function render() {
   const genre = $("genreFilter").value;
   const maker = $("makerFilter").value;
@@ -403,8 +433,16 @@ function render() {
     node.querySelector(".badge").textContent =
       product.tags[0] || product.genres[0] || "作品";
 
-    node.querySelector(".meta").textContent =
-      `${product.maker}${product.date ? ` / ${product.date.slice(0, 10)}` : ""}`;
+    const meta = node.querySelector(".meta");
+meta.innerHTML = "";
+
+meta.appendChild(createSearchButton(product.maker));
+
+if (product.date) {
+  meta.appendChild(
+    document.createTextNode(` / ${product.date.slice(0, 10)}`)
+  );
+}
 
     node.querySelector("h3").textContent = product.title;
   　node.querySelector("h3").textContent = product.title;
@@ -418,10 +456,16 @@ setActressLinks(
     const tags = node.querySelector(".tags");
 
     product.tags.slice(0, 5).forEach((tag) => {
-      const span = document.createElement("span");
-      span.textContent = tag;
-      tags.appendChild(span);
-    });
+  if (product.genres.includes(tag)) {
+    const button = createSearchButton(tag);
+    button.className = "tag-search-button";
+    tags.appendChild(button);
+  } else {
+    const span = document.createElement("span");
+    span.textContent = tag;
+    tags.appendChild(span);
+  }
+});
 
     node.querySelector(".price").textContent =
       product.price > 0
