@@ -1,7 +1,7 @@
 let products = [];
 let activeChip = "";
 let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
-
+let showFavoritesOnly = false;
 let nextOffset = 1;
 let currentKeyword = "";
 let isLoadingMore = false;
@@ -439,13 +439,13 @@ function render() {
   const sort = $("sortFilter").value;
 
   let filtered = products.filter((product) => {
-    return (
-      (!genre || product.genres.includes(genre)) &&
-      (!maker || product.maker === maker) &&
-      (!activeChip || product.tags.includes(activeChip))
-    );
-  });
-
+  return (
+    (!genre || product.genres.includes(genre)) &&
+    (!maker || product.maker === maker) &&
+    (!activeChip || product.tags.includes(activeChip)) &&
+    (!showFavoritesOnly || favorites.includes(product.id))
+  );
+});
   filtered.sort((a, b) => {
     if (sort === "priceLow") {
       return a.price - b.price;
@@ -578,7 +578,8 @@ $("resetBtn").addEventListener("click", () => {
   $("sortFilter").value = "new";
 
   activeChip = "";
-
+　showFavoritesOnly = false;
+　$("favoritesBtn").textContent = `♡ お気に入り ${favorites.length}`;
   document.querySelectorAll("[data-chip]").forEach((button) => {
     button.classList.remove("active");
   });
@@ -587,17 +588,17 @@ $("resetBtn").addEventListener("click", () => {
 });
 
 $("favoritesBtn").addEventListener("click", () => {
-  const favoriteProducts = products.filter((product) =>
-    favorites.includes(product.id)
-  );
+  showFavoritesOnly = !showFavoritesOnly;
 
-  const names = favoriteProducts.map((product) => product.title);
+  $("favoritesBtn").textContent = showFavoritesOnly
+    ? `♡ すべて表示`
+    : `♡ お気に入り ${favorites.length}`;
 
-  alert(
-    names.length
-      ? `お気に入り\n\n${names.join("\n")}`
-      : "お気に入りはまだありません"
-  );
+  render();
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
 });
 
 $("enterBtn").addEventListener("click", () => {
