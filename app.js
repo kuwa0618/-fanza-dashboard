@@ -804,12 +804,32 @@ let filtered = showFavoritesOnly
     favoriteButton.textContent =
       isFavorite ? "♥" : "♡";
 
-    favoriteButton.addEventListener(
-      "click",
-      () => {
-        toggleFavorite(product.id);
-      }
-    );
+   favoriteButton.addEventListener("click", () => {
+  const wasFavorite = favorites.includes(product.id);
+
+  toggleFavorite(product.id);
+
+  if (!wasFavorite) {
+    fetch("/api/favorite", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        content_id: product.id,
+        title: product.title,
+        actress: product.actresses?.join(", ") || "",
+        maker: product.maker || "",
+        genre: product.genres?.join(", ") || "",
+      }),
+    }).catch((error) => {
+      console.error(
+        "お気に入り記録に失敗しました:",
+        error
+      );
+    });
+  }
+});
 
     const detailLink =
       node.querySelector(
