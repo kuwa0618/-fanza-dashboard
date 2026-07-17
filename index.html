@@ -375,7 +375,94 @@ async function loadOtherRankings(period = "week") {
       `<p class="ranking-message">${message}</p>`;
   }
 }
+async function loadFavoriteRanking(period = "week") {
+  const favoriteList = document.getElementById(
+    "favoriteRankingList"
+  );
 
+  if (!favoriteList) {
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `/api/favorite-rankings?period=${period}`
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+          "お気に入りランキングの取得に失敗しました。"
+      );
+    }
+
+    if (!data.rankings || data.rankings.length === 0) {
+      favoriteList.innerHTML =
+        '<p class="ranking-message">まだお気に入りデータがありません。</p>';
+      return;
+    }
+
+    favoriteList.innerHTML = data.rankings
+      .map((item) => {
+        const rawTitle = String(
+          item.title || "作品名不明"
+        );
+
+        const title = escapeRankingText(rawTitle);
+        const encodedTitle =
+          encodeURIComponent(rawTitle);
+
+        const actress = escapeRankingText(
+          item.actress || ""
+        );
+
+        return `
+          <button
+            type="button"
+            class="ranking-item ranking-link"
+            data-favorite-title="${encodedTitle}"
+          >
+            <div class="ranking-number">
+              #${item.rank}
+            </div>
+
+            <div class="ranking-content">
+              <h3>${title}</h3>
+              <p>${actress}</p>
+
+              <small>
+                ${Number(item.favorites || 0)}お気に入り ／
+                この作品を見る →
+              </small>
+            </div>
+          </button>
+        `;
+      })
+      .join("");
+
+    favoriteList
+      .querySelectorAll("[data-favorite-title]")
+      .forEach((button) => {
+        button.addEventListener("click", () => {
+          const title = decodeURIComponent(
+            button.dataset.favoriteTitle || ""
+          );
+
+          if (title) {
+            searchByKeyword(title);
+          }
+        });
+      });
+  } catch (error) {
+    favoriteList.innerHTML =
+      `<p class="ranking-message">${escapeRankingText(
+        error.message ||
+          "お気に入りランキングの取得に失敗しました。"
+      )}</p>`;
+  }
+}
 async function loadAllRankings(period = "week") {
   await Promise.all([
   loadRankings(period),
