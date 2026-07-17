@@ -1104,7 +1104,29 @@ if (actressFromUrl) {
 } else {
   setDefaultPageState();
 }
+async function renderRecommendations(items) {
+  const area = document.getElementById("recommendResults");
 
+  if (!area) return;
+
+  area.innerHTML = "";
+
+  items.forEach(item => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+      <div class="card-body">
+        <h3>${item.title}</h3>
+        <a href="${item.affiliateURL || item.URL}" target="_blank" class="primary">
+          FANZAで見る
+        </a>
+      </div>
+    `;
+
+    area.appendChild(card);
+  });
+}
 fetchProducts(false);
 async function loadRecommendations(product) {
   const params = new URLSearchParams();
@@ -1116,5 +1138,5 @@ async function loadRecommendations(product) {
   const res = await fetch(`/api/recommend?${params}`);
   const data = await res.json();
 
-  console.log("おすすめ作品", data.items);
+ renderRecommendations(data.items);
 }
