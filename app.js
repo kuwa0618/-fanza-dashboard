@@ -862,6 +862,10 @@ let filtered = showFavoritesOnly
   });
 });
     results.appendChild(node);
+
+    
+    loadRecommendations(product);
+    
   });
 
   $("resultCount").textContent =
