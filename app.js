@@ -1102,3 +1102,15 @@ if (actressFromUrl) {
 }
 
 fetchProducts(false);
+async function loadRecommendations(product) {
+  const params = new URLSearchParams();
+
+  if (product.actress) params.append("actress", product.actress);
+  if (product.maker) params.append("maker", product.maker);
+  if (product.genre) params.append("genre", product.genre);
+
+  const res = await fetch(`/api/recommend?${params}`);
+  const data = await res.json();
+
+  console.log("おすすめ作品", data.items);
+}
