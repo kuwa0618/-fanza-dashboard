@@ -131,6 +131,35 @@
     <p class="ranking-message">ランキングを読み込んでいます…</p>
   </div>
 </section>
+  <section class="ranking-section">
+  <div class="section-header">
+    <h2>👩 人気女優ランキング</h2>
+  </div>
+
+  <div id="actressRankingList" class="ranking-list">
+    <p class="ranking-message">ランキングを読み込んでいます...</p>
+  </div>
+</section>
+
+<section class="ranking-section">
+  <div class="section-header">
+    <h2>🏢 人気メーカーランキング</h2>
+  </div>
+
+  <div id="makerRankingList" class="ranking-list">
+    <p class="ranking-message">ランキングを読み込んでいます...</p>
+  </div>
+</section>
+
+<section class="ranking-section">
+  <div class="section-header">
+    <h2>🏷 人気ジャンルランキング</h2>
+  </div>
+
+  <div id="genreRankingList" class="ranking-list">
+    <p class="ranking-message">ランキングを読み込んでいます...</p>
+  </div>
+</section>
   <script>
 let currentPeriod = "week";
 
@@ -163,13 +192,132 @@ async function loadRankings(period = "week") {
   `).join("");
 }
 
-document.querySelectorAll(".ranking-tab").forEach(btn => {
+function escapeRankingText(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function renderSimpleRanking(elementId, items, nameKey) {
+  const element = document.getElementById(elementId);
+
+  if (!items || items.length === 0) {
+    element.innerHTML =
+      '<p class="ranking-message">まだランキングデータがありません。</p>';
+    return;
+  }
+
+  element.innerHTML = items
+    .map((item) => {
+      const name = escapeRankingText(item[nameKey] || "名称不明");
+      const clicks = Number(item.clicks || 0);
+      const productCount = Number(item.product_count || 0);
+
+      return `
+        <article class="ranking-item">
+          <div class="ranking-number">#${item.rank}</div>
+
+          <div class="ranking-content">
+            <h3>${name}</h3>
+            <p>
+              ${clicks}クリック ／
+              ${productCount}作品
+            </p>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+async function loadOtherRankings(period = "week") {
+  const actressList = document.getElementById("actressRankingList");
+  const makerList = document.getElementById("makerRankingList");
+  const genreList = document.getElementById("genreRankingList");
+
+  try {
+    const [actressResponse, makerResponse, genreResponse] =
+      await Promise.all([
+        fetch(`/api/actress-rankings?period=${period}`),
+        fetch(`/api/maker-rankings?period=${period}`),
+        fetch(`/api/genre-rankings?period=${period}`)
+      ]);
+
+    const [actressData, makerData, genreData] =
+      await Promise.all([
+        actressResponse.json(),
+        makerResponse.json(),
+        genreResponse.json()
+      ]);
+
+    if (!actressResponse.ok) {
+      throw new Error(
+        actressData.error || "女優ランキングの取得に失敗しました。"
+      );
+    }
+
+    if (!makerResponse.ok) {
+      throw new Error(
+        makerData.error || "メーカーランキングの取得に失敗しました。"
+      );
+    }
+
+    if (!genreResponse.ok) {
+      throw new Error(
+        genreData.error || "ジャンルランキングの取得に失敗しました。"
+      );
+    }
+
+    renderSimpleRanking(
+      "actressRankingList",
+      actressData.rankings,
+      "actress"
+    );
+
+    renderSimpleRanking(
+      "makerRankingList",
+      makerData.rankings,
+      "maker"
+    );
+
+    renderSimpleRanking(
+      "genreRankingList",
+      genreData.rankings,
+      "genre"
+    );
+  } catch (error) {
+    const message = escapeRankingText(
+      error.message || "ランキングの取得に失敗しました。"
+    );
+
+    actressList.innerHTML =
+      `<p class="ranking-message">${message}</p>`;
+
+    makerList.innerHTML =
+      `<p class="ranking-message">${message}</p>`;
+
+    genreList.innerHTML =
+      `<p class="ranking-message">${message}</p>`;
+  }
+}
+
+async function loadAllRankings(period = "week") {
+  await Promise.all([
+    loadRankings(period),
+    loadOtherRankings(period)
+  ]);
+}
+
+document.querySelectorAll(".ranking-tab").forEach((btn) => {
   btn.addEventListener("click", () => {
-    loadRankings(btn.dataset.period);
+    loadAllRankings(btn.dataset.period);
   });
 });
 
-loadRankings();
+loadAllRankings();
 </script>
   <script src="app.js"></script>
   <footer class="site-footer">
