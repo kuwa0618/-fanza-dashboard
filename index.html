@@ -181,16 +181,47 @@ async function loadRankings(period = "week") {
     return;
   }
 
-  rankingList.innerHTML = data.rankings.map(item => `
-    <article class="ranking-item">
-      <div class="ranking-number">#${item.rank}</div>
-      <div class="ranking-content">
-        <h3>${item.title}</h3>
-        <p>${item.actress || ""}</p>
-        <small>${item.clicks}クリック</small>
-      </div>
-    </article>
-  `).join("");
+ rankingList.innerHTML = data.rankings
+  .map((item) => {
+    const rawTitle = String(item.title || "作品名不明");
+    const title = escapeRankingText(rawTitle);
+    const encodedTitle = encodeURIComponent(rawTitle);
+    const actress = escapeRankingText(item.actress || "");
+
+    return `
+      <button
+        type="button"
+        class="ranking-item ranking-link"
+        data-ranking-title="${encodedTitle}"
+      >
+        <div class="ranking-number">#${item.rank}</div>
+
+        <div class="ranking-content">
+          <h3>${title}</h3>
+          <p>${actress}</p>
+          <small>
+            ${Number(item.clicks || 0)}クリック ／
+            この作品を見る →
+          </small>
+        </div>
+      </button>
+    `;
+  })
+  .join("");
+
+rankingList
+  .querySelectorAll("[data-ranking-title]")
+  .forEach((button) => {
+    button.addEventListener("click", () => {
+      const title = decodeURIComponent(
+        button.dataset.rankingTitle || ""
+      );
+
+      if (title) {
+        searchByKeyword(title);
+      }
+    });
+  });
 }
 
 function escapeRankingText(value) {
