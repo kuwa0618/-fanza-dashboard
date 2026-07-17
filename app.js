@@ -864,7 +864,7 @@ let filtered = showFavoritesOnly
     results.appendChild(node);
 
     
-    loadRecommendations(product);
+   
     
   });
 
@@ -1104,49 +1104,5 @@ if (actressFromUrl) {
 } else {
   setDefaultPageState();
 }
-async function renderRecommendations(items) {
-  const area = document.getElementById("recommendResults");
 
-  if (!area) return;
-
-  area.innerHTML = "";
-
-  items.forEach(item => {
-    const card = document.createElement("div");
-    card.className = "card";
-
-    card.innerHTML = `
-      <div class="card-body">
-        <h3>${item.title}</h3>
-        <a href="${item.affiliateURL || item.URL}" target="_blank" class="primary">
-          FANZAで見る
-        </a>
-      </div>
-    `;
-
-    area.appendChild(card);
-  });
-}
 fetchProducts(false);
-async function loadRecommendations(product) {
-  const params = new URLSearchParams();
-
-  const actress = product.actresses?.[0] || "";
-  const maker = product.maker || "";
-  const genre = product.genres?.[0] || "";
-
-  if (actress) {
-    params.set("actress", actress);
-  } else if (maker && maker !== "メーカー不明") {
-    params.set("maker", maker);
-  } else if (genre) {
-    params.set("genre", genre);
-  } else {
-    return;
-  }
-
-  const res = await fetch(`/api/recommend?${params.toString()}`);
-  const data = await res.json();
-
-  renderRecommendations(data.items || []);
-}
