@@ -134,6 +134,17 @@
 </section>
   <section class="ranking-section">
   <div class="section-header">
+    <h2>⭐ みんなのお気に入りランキング</h2>
+  </div>
+
+  <div id="favoriteRankingList" class="ranking-list">
+    <p class="ranking-message">
+      ランキングを読み込んでいます...
+    </p>
+  </div>
+</section>
+  <section class="ranking-section">
+  <div class="section-header">
     <h2>👩 人気女優ランキング</h2>
   </div>
 
@@ -367,9 +378,10 @@ async function loadOtherRankings(period = "week") {
 
 async function loadAllRankings(period = "week") {
   await Promise.all([
-    loadRankings(period),
-    loadOtherRankings(period)
-  ]);
+  loadRankings(period),
+  loadOtherRankings(period),
+  loadFavoriteRanking(period)
+]);
 }
 
 document.querySelectorAll(".ranking-tab").forEach((btn) => {
