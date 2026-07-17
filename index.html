@@ -213,25 +213,54 @@ function renderSimpleRanking(elementId, items, nameKey) {
 
   element.innerHTML = items
     .map((item) => {
-      const name = escapeRankingText(item[nameKey] || "名称不明");
+      const rawName = String(item[nameKey] || "名称不明");
+      const name = escapeRankingText(rawName);
+      const encodedName = encodeURIComponent(rawName);
       const clicks = Number(item.clicks || 0);
       const productCount = Number(item.product_count || 0);
 
       return `
-        <article class="ranking-item">
+        <button
+          type="button"
+          class="ranking-item ranking-link"
+          data-ranking-value="${encodedName}"
+        >
           <div class="ranking-number">#${item.rank}</div>
 
           <div class="ranking-content">
             <h3>${name}</h3>
+
             <p>
               ${clicks}クリック ／
               ${productCount}作品
             </p>
+
+            <small>この条件で作品を見る →</small>
           </div>
-        </article>
+        </button>
       `;
     })
     .join("");
+
+  element
+    .querySelectorAll(".ranking-link")
+    .forEach((button) => {
+      button.addEventListener("click", () => {
+        const value = decodeURIComponent(
+          button.dataset.rankingValue || ""
+        );
+
+        if (!value) {
+          return;
+        }
+
+        if (nameKey === "actress") {
+          openActressPage(value);
+        } else {
+          searchByKeyword(value);
+        }
+      });
+    });
 }
 
 async function loadOtherRankings(period = "week") {
