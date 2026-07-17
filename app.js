@@ -1131,12 +1131,22 @@ fetchProducts(false);
 async function loadRecommendations(product) {
   const params = new URLSearchParams();
 
-  if (product.actress) params.append("actress", product.actress);
-  if (product.maker) params.append("maker", product.maker);
-  if (product.genre) params.append("genre", product.genre);
+  const actress = product.actresses?.[0] || "";
+  const maker = product.maker || "";
+  const genre = product.genres?.[0] || "";
 
-  const res = await fetch(`/api/recommend?${params}`);
+  if (actress) {
+    params.set("actress", actress);
+  } else if (maker && maker !== "メーカー不明") {
+    params.set("maker", maker);
+  } else if (genre) {
+    params.set("genre", genre);
+  } else {
+    return;
+  }
+
+  const res = await fetch(`/api/recommend?${params.toString()}`);
   const data = await res.json();
 
- renderRecommendations(data.items);
+  renderRecommendations(data.items || []);
 }
