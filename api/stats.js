@@ -4,28 +4,47 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch(
-      `${process.env.SUPABASE_URL}/rest/v1/click_logs` +
-        "?select=content_id,title,actress,maker,genre,clicked_at" +
-        "&order=clicked_at.desc" +
-        "&limit=1000",
-      {
-        headers: {
-          apikey: process.env.SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${process.env.SUPABASE_ANON_KEY}`,
-        },
-      }
-    );
+    const headers = {
+      apikey: process.env.SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+    };
 
-    if (!response.ok) {
-      const errorText = await response.text();
+    const [clickResponse, favoriteResponse] = await Promise.all([
+      fetch(
+        `${process.env.SUPABASE_URL}/rest/v1/click_logs` +
+          "?select=content_id,title,actress,maker,genre,clicked_at" +
+          "&order=clicked_at.desc" +
+          "&limit=1000",
+        { headers }
+      ),
+      fetch(
+        `${process.env.SUPABASE_URL}/rest/v1/favorite_logs` +
+          "?select=content_id,title,favorited_at" +
+          "&order=favorited_at.desc" +
+          "&limit=1000",
+        { headers }
+      ),
+    ]);
 
-      return res.status(response.status).json({
+    if (!clickResponse.ok) {
+      const errorText = await clickResponse.text();
+
+      return res.status(clickResponse.status).json({
         error: errorText || "クリックデータの取得に失敗しました",
       });
     }
 
-    const logs = await response.json();
+    if (!favoriteResponse.ok) {
+      const errorText = await favoriteResponse.text();
+
+      return res.status(favoriteResponse.status).json({
+        error: errorText || "お気に入りデータの取得に失敗しました",
+      });
+    }
+
+    const logs = await clickResponse.json();
+    const favoriteLogs = await favoriteResponse.json();
+
     const now = new Date();
 
     const startOfToday = new Date(
@@ -40,8 +59,8 @@ export default async function handler(req, res) {
     const thirtyDaysAgo = new Date(now);
     thirtyDaysAgo.setDate(now.getDate() - 30);
 
-    const countSince = (date) =>
-      logs.filter((log) => new Date(log.clicked_at) >= date).length;
+    const countSince = (items, date, dateColumn) =>
+      items.filter((item) => new Date(item[dateColumn]) >= date).length;
 
     const countValues = (values) => {
       const counts = {};
@@ -82,6 +101,26 @@ export default async function handler(req, res) {
       .sort((a, b) => b.clicks - a.clicks)
       .slice(0, 20);
 
+    const favoriteMap = {};
+
+    favoriteLogs.forEach((log) => {
+      const key = log.content_id;
+
+      if (!favoriteMap[key]) {
+        favoriteMap[key] = {
+          content_id: log.content_id,
+          title: log.title || "タイトル不明",
+          favorites: 0,
+        };
+      }
+
+      favoriteMap[key].favorites += 1;
+    });
+
+    const topFavorites = Object.values(favoriteMap)
+      .sort((a, b) => b.favorites - a.favorites)
+      .slice(0, 20);
+
     const makers = countValues(logs.map((log) => log.maker)).slice(0, 10);
 
     const genres = countValues(
@@ -112,15 +151,33 @@ export default async function handler(req, res) {
     return res.status(200).json({
       totals: {
         all: logs.length,
-        today: countSince(startOfToday),
-        sevenDays: countSince(sevenDaysAgo),
-        thirtyDays: countSince(thirtyDaysAgo),
+        today: countSince(logs, startOfToday, "clicked_at"),
+        sevenDays: countSince(logs, sevenDaysAgo, "clicked_at"),
+        thirtyDays: countSince(logs, thirtyDaysAgo, "clicked_at"),
+        favoritesAll: favoriteLogs.length,
+        favoritesToday: countSince(
+          favoriteLogs,
+          startOfToday,
+          "favorited_at"
+        ),
+        favoritesSevenDays: countSince(
+          favoriteLogs,
+          sevenDaysAgo,
+          "favorited_at"
+        ),
+        favoritesThirtyDays: countSince(
+          favoriteLogs,
+          thirtyDaysAgo,
+          "favorited_at"
+        ),
       },
       topProducts,
+      topFavorites,
       topMakers: makers,
       topGenres: genres,
       dailyClicks,
       recentClicks: logs.slice(0, 20),
+      recentFavorites: favoriteLogs.slice(0, 20),
     });
   } catch (error) {
     return res.status(500).json({
