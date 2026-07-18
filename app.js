@@ -331,7 +331,7 @@ function updateLoadMoreButton(show) {
 
     button.id = "loadMoreBtn";
     button.type = "button";
-    button.textContent = "もっと見る";
+    button.textContent = "検索結果をもっと見る";
 
     Object.assign(button.style, {
       display: "block",
@@ -360,7 +360,7 @@ function updateLoadMoreButton(show) {
     show ? "block" : "none";
 
   button.disabled = false;
-  button.textContent = "もっと見る";
+  button.textContent = "検索結果をもっと見る";
 }
 
 function setPageHeading(text) {
