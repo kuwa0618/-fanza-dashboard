@@ -1200,3 +1200,4 @@ if (actressFromUrl) {
 }
 
 fetchProducts(false);
+fetchRecommendations();
