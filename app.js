@@ -675,8 +675,8 @@ async function fetchRecommendations() {
     }
 
     recommendationProducts =
-     asArray(data.recommendations || data.products)
-        .map(normalizeProduct);
+  asArray(data.products?.length ? data.products : data.recommendations)
+    .map(normalizeProduct);
 
     renderRecommendations();
   } catch (error) {
