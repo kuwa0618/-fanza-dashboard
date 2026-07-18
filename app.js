@@ -1,5 +1,6 @@
 let products = [];
 let recommendationProducts = [];
+let recommendationVisibleCount = 6;
 let activeChip = "";
 let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
 
@@ -674,7 +675,7 @@ async function fetchRecommendations() {
     }
 
     recommendationProducts =
-     asArray(data.recommendations || data.products).slice(0, 6)
+     asArray(data.recommendations || data.products)
         .map(normalizeProduct);
 
     renderRecommendations();
@@ -696,6 +697,9 @@ function renderRecommendations() {
         ✨ おすすめ作品
       </h2>
       <div id="recommendResults" class="results"></div>
+<button id="recommendMoreBtn" type="button">
+  おすすめをもっと見る
+</button>
     `;
 
     document
@@ -708,7 +712,9 @@ function renderRecommendations() {
 
   area.innerHTML = "";
 
-  recommendationProducts.forEach((product) => {
+  recommendationProducts
+  .slice(0, recommendationVisibleCount)
+  .forEach((product) => {
     const node =
       template.content.cloneNode(true);
 
@@ -741,6 +747,19 @@ function renderRecommendations() {
 
     area.appendChild(node);
   });
+  const moreBtn = document.getElementById("recommendMoreBtn");
+
+if (moreBtn) {
+  moreBtn.style.display =
+    recommendationVisibleCount < recommendationProducts.length
+      ? "block"
+      : "none";
+
+  moreBtn.onclick = () => {
+    recommendationVisibleCount += 6;
+    renderRecommendations();
+  };
+}
 }
 
 function render() {
