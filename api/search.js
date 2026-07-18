@@ -15,7 +15,10 @@ export default async function handler(req, res) {
       error: "Vercelの環境変数が設定されていません。",
     });
   }
-
+const mode =
+  typeof req.query.mode === "string"
+    ? req.query.mode.trim()
+    : "";
   const keyword =
     typeof req.query.keyword === "string"
       ? req.query.keyword.trim()
@@ -46,7 +49,10 @@ export default async function handler(req, res) {
   if (keyword) {
     params.set("keyword", keyword);
   }
-
+  
+if (mode === "recommend") {
+  params.set("sort", "rank");
+}
   try {
     const response = await fetch(
       `https://api.dmm.com/affiliate/v3/ItemList?${params.toString()}`,
@@ -80,6 +86,7 @@ export default async function handler(req, res) {
       firstPosition: Number(data.result.first_position || 0),
       resultCount: Number(data.result.result_count || products.length),
       products,
+  　　recommendations: mode === "recommend" ? products.slice(0, 6) : [],
     });
   } catch (error) {
     console.error("DMM API error:", error);
