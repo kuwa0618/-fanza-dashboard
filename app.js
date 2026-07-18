@@ -674,7 +674,7 @@ async function fetchRecommendations() {
     }
 
     recommendationProducts =
-      asArray(data.recommendations)
+     asArray(data.recommendations || data.products).slice(0, 6)
         .map(normalizeProduct);
 
     renderRecommendations();
