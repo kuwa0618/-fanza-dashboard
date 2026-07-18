@@ -1,4 +1,5 @@
 let products = [];
+let recommendationProducts = [];
 let activeChip = "";
 let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
 
@@ -598,7 +599,12 @@ async function fetchProducts(
 
     const data =
       await response.json();
-
+    
+　　if (!append) {
+ 　　 recommendationProducts = asArray(data.recommendations).map(normalizeProduct);
+  　　renderRecommendations();
+　　}
+    
     if (
       !response.ok ||
       !data.success
@@ -648,6 +654,93 @@ async function fetchProducts(
 
     isLoadingMore = false;
   }
+}
+async function fetchRecommendations() {
+  try {
+    const response =
+      await fetch("/api/search?mode=recommend");
+
+    const data =
+      await response.json();
+
+    if (
+      !response.ok ||
+      !data.success
+    ) {
+      throw new Error(
+        data.error ||
+        "おすすめ作品を取得できませんでした。"
+      );
+    }
+
+    recommendationProducts =
+      asArray(data.recommendations)
+        .map(normalizeProduct);
+
+    renderRecommendations();
+  } catch (error) {
+    console.error(
+      "おすすめ作品の取得に失敗しました。",
+      error
+    );
+  }
+}
+function renderRecommendations() {
+  let section = document.getElementById("recommendSection");
+
+  if (!section) {
+    section = document.createElement("section");
+    section.id = "recommendSection";
+    section.innerHTML = `
+      <h2 style="margin:40px 0 20px;">
+        ✨ おすすめ作品
+      </h2>
+      <div id="recommendResults" class="results"></div>
+    `;
+
+    document
+      .querySelector("main")
+      .appendChild(section);
+  }
+
+  const area =
+    document.getElementById("recommendResults");
+
+  area.innerHTML = "";
+
+  recommendationProducts.forEach((product) => {
+    const node =
+      template.content.cloneNode(true);
+
+    node.querySelector(".badge").textContent =
+      "おすすめ";
+
+    node.querySelector("h3").textContent =
+      product.title;
+
+    setActressLinks(
+      product,
+      node.querySelector(".description")
+    );
+
+    setProductImage(
+      product,
+      node.querySelector(".placeholder")
+    );
+
+    node.querySelector(".price").textContent =
+      product.price > 0
+        ? `¥${product.price.toLocaleString()}〜`
+        : "価格はFANZAで確認";
+
+    const link =
+      node.querySelector(".detail-link");
+
+    link.href = product.url;
+    link.target = "_blank";
+
+    area.appendChild(node);
+  });
 }
 
 function render() {
@@ -1077,7 +1170,8 @@ window.addEventListener(
       setDefaultPageState();
     }
 
-    fetchProducts(false);
+   fetchProducts(false);
+　　renderRecommendations();
   }
 );
 
