@@ -352,9 +352,7 @@ function updateLoadMoreButton(show) {
       () => fetchProducts(true)
     );
 
-    results.parentElement.appendChild(
-      button
-    );
+   results.after(button);
   }
 
   button.style.display =
@@ -697,14 +695,29 @@ function renderRecommendations() {
         ✨ おすすめ作品
       </h2>
       <div id="recommendResults" class="results"></div>
-<button id="recommendMoreBtn" type="button">
+<button
+  id="recommendMoreBtn"
+  type="button"
+  style="
+    display:block;
+    margin:32px auto;
+    padding:14px 36px;
+    border:0;
+    border-radius:999px;
+    background:#111;
+    color:#fff;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+  "
+>
   おすすめをもっと見る
 </button>
     `;
 
-    document
-      .querySelector("main")
-      .appendChild(section);
+   document
+  .getElementById("recommendArea")
+  .replaceWith(section);
   }
 
   const area =
