@@ -374,10 +374,10 @@ function setPageHeading(text) {
 }
 
 function setDefaultPageState() {
-  document.title = "作品さがし";
+  document.title = "FANZA作品ナビ";
 
   setPageHeading(
-    "好みから作品を見つける"
+    "FANZA作品ナビ"
   );
 }
 
