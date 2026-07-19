@@ -56,3 +56,21 @@
     font-size: 13px;
   }
 }
+
+@media (max-width: 768px) {
+  .card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .card-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .card-footer {
+    margin-top: auto;
+  }
+}
