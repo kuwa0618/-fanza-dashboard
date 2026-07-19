@@ -578,100 +578,60 @@ async function fetchProducts(
   }
 
   try {
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
+    const params =
+      new URLSearchParams({
+        hits: "20",
+        offset: String(nextOffset),
+      });
 
-    const releasedProducts = [];
-    let rawOffset = nextOffset;
-    let totalCount = 0;
-    let requestCount = 0;
+    if (currentKeyword) {
+      params.set(
+        "keyword",
+        currentKeyword
+      );
+    }
 
-    while (
-      releasedProducts.length < 20 &&
-      requestCount < 5
-    ) {
-      const params =
-        new URLSearchParams({
-          hits: "100",
-          offset: String(rawOffset),
-        });
-
-      if (currentKeyword) {
-        params.set(
-          "keyword",
-          currentKeyword
-        );
-      }
-
-      const response =
-        await fetch(
-          `/api/search?${params.toString()}`
-        );
-
-      const data =
-        await response.json();
-
-      if (
-        !response.ok ||
-        !data.success
-      ) {
-        throw new Error(
-          data.error ||
-          "作品情報を取得できませんでした。"
-        );
-      }
-
-      const rawProducts =
-        asArray(data.products);
-
-      totalCount =
-        Number(data.totalCount || 0);
-
-      const released =
-        rawProducts
-          .map(normalizeProduct)
-          .filter((product) => {
-            if (!product.date) {
-              return true;
-            }
-
-            return (
-              new Date(product.date) <= today
-            );
-          });
-
-      releasedProducts.push(
-        ...released
+    const response =
+      await fetch(
+        `/api/search?${params.toString()}`
       );
 
-      rawOffset +=
-        rawProducts.length;
-
-      requestCount += 1;
-
-      if (
-        rawProducts.length === 0 ||
-        rawOffset > totalCount
-      ) {
-        break;
-      }
+    const data =
+      await response.json();
+    
+　　if (!append) {
+ 　　 recommendationProducts = asArray(data.recommendations).map(normalizeProduct);
+  　　renderRecommendations();
+　　}
+    
+    if (
+      !response.ok ||
+      !data.success
+    ) {
+      throw new Error(
+        data.error ||
+        "作品情報を取得できませんでした。"
+      );
     }
 
     const newProducts =
-      releasedProducts.slice(0, 20);
+      asArray(data.products)
+        .map(normalizeProduct);
 
     products = append
       ? [...products, ...newProducts]
       : newProducts;
 
-    nextOffset = rawOffset;
+    nextOffset +=
+      newProducts.length;
 
     updateFilters();
     render();
 
     updateLoadMoreButton(
       newProducts.length === 20 &&
-      nextOffset <= totalCount
+      products.length <
+        Number(data.totalCount || 0)
     );
   } catch (error) {
     console.error(error);
@@ -693,6 +653,126 @@ async function fetchProducts(
 
     isLoadingMore = false;
   }
+}
+async function fetchRecommendations() {
+  try {
+    const response =
+      await fetch("/api/search?mode=recommend");
+
+    const data =
+      await response.json();
+
+    if (
+      !response.ok ||
+      !data.success
+    ) {
+      throw new Error(
+        data.error ||
+        "おすすめ作品を取得できませんでした。"
+      );
+    }
+
+    recommendationProducts =
+  asArray(data.products?.length ? data.products : data.recommendations)
+    .map(normalizeProduct);
+
+    renderRecommendations();
+  } catch (error) {
+    console.error(
+      "おすすめ作品の取得に失敗しました。",
+      error
+    );
+  }
+}
+function renderRecommendations() {
+  let section = document.getElementById("recommendSection");
+
+  if (!section) {
+    section = document.createElement("section");
+    section.id = "recommendSection";
+    section.innerHTML = `
+      <h2 style="margin:40px 0 20px;">
+        ✨ おすすめ作品
+      </h2>
+      <div id="recommendResults" class="results"></div>
+<button
+  id="recommendMoreBtn"
+  type="button"
+  style="
+    display:block;
+    margin:32px auto;
+    padding:14px 36px;
+    border:0;
+    border-radius:999px;
+    background:#111;
+    color:#fff;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+  "
+>
+  おすすめをもっと見る
+</button>
+    `;
+
+   document
+  .getElementById("recommendArea")
+  .replaceWith(section);
+  }
+
+  const area =
+    document.getElementById("recommendResults");
+
+  area.innerHTML = "";
+
+  recommendationProducts
+  .slice(0, recommendationVisibleCount)
+  .forEach((product) => {
+    const node =
+      template.content.cloneNode(true);
+
+    node.querySelector(".badge").textContent =
+      "おすすめ";
+
+    node.querySelector("h3").textContent =
+      product.title;
+
+    setActressLinks(
+      product,
+      node.querySelector(".description")
+    );
+
+    setProductImage(
+      product,
+      node.querySelector(".placeholder")
+    );
+
+    node.querySelector(".price").textContent =
+      product.price > 0
+        ? `¥${product.price.toLocaleString()}〜`
+        : "価格はFANZAで確認";
+
+    const link =
+      node.querySelector(".detail-link");
+
+    link.href = product.url;
+    link.target = "_blank";
+
+    area.appendChild(node);
+  });
+  const moreBtn = document.getElementById("recommendMoreBtn");
+
+if (moreBtn) {
+  moreBtn.style.display =
+    recommendationVisibleCount < recommendationProducts.length
+      ? "block"
+      : "none";
+
+  moreBtn.onclick = () => {
+    recommendationVisibleCount += 6;
+    renderRecommendations();
+  };
+}
 }
 
 function render() {
