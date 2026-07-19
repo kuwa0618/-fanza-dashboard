@@ -614,9 +614,19 @@ async function fetchProducts(
       );
     }
 
-    const newProducts =
-      asArray(data.products)
-        .map(normalizeProduct);
+    const today = new Date();
+today.setHours(23, 59, 59, 999);
+
+const newProducts =
+  asArray(data.products)
+    .map(normalizeProduct)
+    .filter((product) => {
+      if (!product.date) {
+        return true;
+      }
+
+      return new Date(product.date) <= today;
+    });
 
     products = append
       ? [...products, ...newProducts]
