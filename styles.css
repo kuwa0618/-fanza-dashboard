@@ -182,3 +182,27 @@
 .clear-mood-btn:hover {
   text-decoration: underline;
 }
+
+.recommend-carousel {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 10px;
+  scroll-snap-type: x proximity;
+}
+
+.recommend-carousel::-webkit-scrollbar {
+  height: 8px;
+}
+
+.recommend-carousel::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 999px;
+}
+
+.recommend-carousel .card {
+  min-width: 280px;
+  flex: 0 0 280px;
+  scroll-snap-align: start;
+}
