@@ -694,7 +694,7 @@ function renderRecommendations() {
   <h2 style="margin:40px 0 20px;">
     ✨ 今日のおすすめ
   </h2>
-      <div id="recommendResults" class="results"></div>
+      <div id="recommendResults" class="results recommend-carousel"></div>
 <button
   id="recommendMoreBtn"
   type="button"
