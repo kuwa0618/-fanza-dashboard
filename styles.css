@@ -206,3 +206,19 @@
   flex: 0 0 240px;
   scroll-snap-align: start;
 }
+
+.recommend-carousel .card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.recommend-carousel .card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.recommend-carousel .price-row {
+  margin-top: auto;
+}
