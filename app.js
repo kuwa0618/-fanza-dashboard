@@ -691,9 +691,9 @@ function renderRecommendations() {
     section = document.createElement("section");
     section.id = "recommendSection";
     section.innerHTML = `
-      <h2 style="margin:40px 0 20px;">
-        ✨ おすすめ作品
-      </h2>
+  <h2 style="margin:40px 0 20px;">
+    ✨ 今日のおすすめ
+  </h2>
       <div id="recommendResults" class="results"></div>
 <button
   id="recommendMoreBtn"
