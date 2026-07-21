@@ -1122,12 +1122,32 @@ document
       let selectedMood = button.dataset.mood;
       let keyword = moodKeywords[selectedMood];
 
+      const moodIcons = {
+  イチャイチャ: "❤️",
+  激しい: "🔥",
+  人妻: "👩",
+  清楚: "🌸",
+  新人: "✨",
+  おまかせ: "🎲",
+};
       if (selectedMood === "おまかせ") {
         const moods = Object.values(moodKeywords);
         keyword =
           moods[Math.floor(Math.random() * moods.length)];
       }
+      
+$("activeMoodText").textContent =
+  `${moodIcons[selectedMood]} ${selectedMood}作品を表示中`;
 
+$("activeMood").classList.remove("hidden");
+     document
+  .querySelectorAll("[data-mood]")
+  .forEach((moodButton) => {
+    moodButton.classList.toggle(
+      "active",
+      moodButton === button
+    );
+  }); 
       searchByKeyword(keyword);
     });
   });
@@ -1186,6 +1206,19 @@ $("favoritesBtn").addEventListener("click", () => {
   });
 });
 
+$("clearMoodBtn").addEventListener("click", () => {
+  $("activeMood").classList.add("hidden");
+  $("activeMoodText").textContent = "";
+  $("keyword").value = "";
+
+  document
+    .querySelectorAll("[data-mood]")
+    .forEach((button) => {
+      button.classList.remove("active");
+    });
+
+  fetchProducts(false);
+});
 $("enterBtn").addEventListener(
   "click",
   () => {
