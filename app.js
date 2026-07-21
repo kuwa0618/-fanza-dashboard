@@ -377,7 +377,7 @@ function setDefaultPageState() {
   document.title = "FANZA作品ナビ";
 
   setPageHeading(
-    "FANZA作品ナビ"
+    "今日は何を見る？30秒で見つけよう。"
   );
 }
 
