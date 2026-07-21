@@ -1107,8 +1107,7 @@ document
     );
   });
 
-$("resetBtn").addEventListener(
-  document
+document
   .querySelectorAll("[data-mood]")
   .forEach((button) => {
     button.addEventListener("click", () => {
@@ -1132,6 +1131,7 @@ $("resetBtn").addEventListener(
       searchByKeyword(keyword);
     });
   });
+$("resetBtn").addEventListener(
   "click",
   () => {
     $("keyword").value = "";
