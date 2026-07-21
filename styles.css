@@ -88,3 +88,63 @@
     font-size: 0.95rem;
   }
 }
+
+/* ===== 気分から選ぶ ===== */
+
+.mood-panel {
+  margin: 32px 0;
+  padding: 24px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.mood-heading {
+  margin-bottom: 20px;
+}
+
+.mood-heading h2 {
+  margin: 8px 0 0;
+  font-size: 1.6rem;
+}
+
+.mood-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+}
+
+.mood-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 18px 12px;
+
+  border: 1px solid #e5e5e5;
+  border-radius: 14px;
+
+  background: #fff;
+
+  cursor: pointer;
+
+  transition: all .2s ease;
+}
+
+.mood-button:hover {
+  transform: translateY(-3px);
+  border-color: #ff5b8a;
+  box-shadow: 0 8px 20px rgba(255, 91, 138, .15);
+}
+
+.mood-icon {
+  font-size: 1.8rem;
+}
+
+@media (max-width: 768px) {
+  .mood-buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
