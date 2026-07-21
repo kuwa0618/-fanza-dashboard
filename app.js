@@ -1108,6 +1108,30 @@ document
   });
 
 $("resetBtn").addEventListener(
+  document
+  .querySelectorAll("[data-mood]")
+  .forEach((button) => {
+    button.addEventListener("click", () => {
+      const moodKeywords = {
+        イチャイチャ: "イチャイチャ",
+        激しい: "ハード",
+        人妻: "人妻",
+        清楚: "清楚",
+        新人: "新人",
+      };
+
+      let selectedMood = button.dataset.mood;
+      let keyword = moodKeywords[selectedMood];
+
+      if (selectedMood === "おまかせ") {
+        const moods = Object.values(moodKeywords);
+        keyword =
+          moods[Math.floor(Math.random() * moods.length)];
+      }
+
+      searchByKeyword(keyword);
+    });
+  });
   "click",
   () => {
     $("keyword").value = "";
