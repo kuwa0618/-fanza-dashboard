@@ -33,17 +33,23 @@ const mode =
     Number.parseInt(req.query.offset, 10) || 1,
     1
   );
-
+const nowJst = new Date()
+  .toLocaleString("sv-SE", {
+    timeZone: "Asia/Tokyo",
+  })
+  .replace(" ", "T");
+  
   const params = new URLSearchParams({
     api_id: apiId,
     affiliate_id: affiliateId,
     site: "FANZA",
     service: "digital",
     floor: "videoa",
-   hits: "100",
-    offset: String(offset),
-    sort: "date",
-    output: "json",
+   hits: String(hits),
+offset: String(offset),
+sort: "date",
+lte_date: nowJst,
+output: "json",
   });
 
   if (keyword) {
@@ -64,10 +70,7 @@ if (mode === "recommend") {
     );
 
     const data = await response.json();
-    const today = new Date();
-
-today.setHours(0, 0, 0, 0);
-
+  
     if (!response.ok || data?.result?.status !== 200) {
       return res.status(502).json({
         success: false,
@@ -79,13 +82,7 @@ today.setHours(0, 0, 0, 0);
     }
 
     const products = Array.isArray(data.result.items)
-  ? data.result.items.filter((item) => {
-      if (!item.date) return true;
-
-      const releaseDate = new Date(item.date);
-
-      return releaseDate <= today;
-    })
+  ? data.result.items
   : [];
 
     return res.status(200).json({
