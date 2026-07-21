@@ -40,7 +40,7 @@ const mode =
     site: "FANZA",
     service: "digital",
     floor: "videoa",
-    hits: String(hits),
+   hits: "100",
     offset: String(offset),
     sort: "date",
     output: "json",
@@ -64,6 +64,9 @@ if (mode === "recommend") {
     );
 
     const data = await response.json();
+    const today = new Date();
+
+today.setHours(0, 0, 0, 0);
 
     if (!response.ok || data?.result?.status !== 200) {
       return res.status(502).json({
@@ -76,8 +79,14 @@ if (mode === "recommend") {
     }
 
     const products = Array.isArray(data.result.items)
-      ? data.result.items
-      : [];
+  ? data.result.items.filter((item) => {
+      if (!item.date) return true;
+
+      const releaseDate = new Date(item.date);
+
+      return releaseDate <= today;
+    })
+  : [];
 
     return res.status(200).json({
       success: true,
