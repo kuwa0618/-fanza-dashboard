@@ -68,43 +68,6 @@
  <h2>✨ 今日のおすすめ</h2>
   <div id="recommendResults" class="cards"></div>
 </section>
-
- /* ===== カード高さを完全統一 ===== */
-
-/* カード全体 */
-.card {
-  display: flex;
-  flex-direction: column;
-}
-
-/* 本文 */
-.card-body {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-/* 出演者・説明文を2行固定 */
-.description {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-
-  line-height: 1.6;
-  min-height: 3.2em;
-  max-height: 3.2em;
-}
-
-/* タグの高さを固定 */
-.tags {
-  min-height: 30px;
-}
-
-/* フッターを最下部へ */
-.card-footer {
-  margin-top: auto;
-}
     
  <main>
   <section class="mood-panel">
@@ -231,42 +194,7 @@
       </div>
     </article>
   </template>
-/* ===== カード高さを完全統一 ===== */
 
-/* カード全体 */
-.card {
-  display: flex;
-  flex-direction: column;
-}
-
-/* 本文 */
-.card-body {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-/* 出演者・説明文を2行固定 */
-.description {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-
-  line-height: 1.6;
-  min-height: 3.2em;
-  max-height: 3.2em;
-}
-
-/* タグの高さを固定 */
-.tags {
-  min-height: 30px;
-}
-
-/* フッターを最下部へ */
-.card-footer {
-  margin-top: auto;
-}
   <section class="ranking-section">
   <div class="section-header">
     <h2>⭐ みんなのお気に入りランキング</h2>
