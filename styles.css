@@ -329,11 +329,11 @@
 }
 
 .recommend-arrow-prev {
-  left: 8px;
+  left: -8px;
 }
 
 .recommend-arrow-next {
-  right: 8px;
+  right: -8px;
 }
 
 .recommend-arrow:hover {
