@@ -215,22 +215,55 @@
   border-radius: 999px;
 }
 
+.recommend-carousel {
+  align-items: stretch;
+}
+
 .recommend-carousel .card {
   min-width: 240px;
   flex: 0 0 240px;
   scroll-snap-align: start;
-}
 
-.recommend-carousel .card {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  align-self: stretch;
 }
 
 .recommend-carousel .card-body {
   display: flex;
   flex-direction: column;
   flex: 1;
+  height: 100%;
+}
+
+.recommend-carousel .card h3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+
+  line-height: 1.4;
+  height: 4.2em;
+  min-height: 4.2em;
+}
+
+.recommend-carousel .description {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+
+  line-height: 1.65;
+  height: 3.3em;
+  min-height: 3.3em;
+}
+
+.recommend-carousel .tags {
+  min-height: 0;
+}
+
+.recommend-carousel .card-footer {
+  margin-top: auto;
 }
 
 .recommend-carousel .price-row {
