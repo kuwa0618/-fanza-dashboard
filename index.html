@@ -292,8 +292,17 @@ async function loadRankings(period = "week") {
   })
 );
 
-rankingList.innerHTML = rankingProducts
-  .map((item) => {
+const visibleRankings = rankingProducts.filter(
+  (item) =>
+    item.product &&
+    (
+      item.product.imageURL?.large ||
+      item.product.imageURL?.list
+    )
+);
+  
+rankingList.innerHTML = visibleRankings
+  .map((item, index) => {
     const product = item.product;
 
     const rawTitle = String(
@@ -321,7 +330,7 @@ rankingList.innerHTML = rankingProducts
     return `
       <article class="ranking-product-card">
         <div class="ranking-card-image-wrap">
-          <div class="ranking-number">#${item.rank}</div>
+          <div class="ranking-number">#${index + 1}</div>
 
           ${
             image
