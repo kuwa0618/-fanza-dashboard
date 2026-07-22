@@ -284,3 +284,64 @@
   min-height: 2.8em;
   max-height: 2.8em;
 }
+
+/* ===== 今日のおすすめ・PC用左右矢印 ===== */
+.recommend-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 40px 0 20px;
+}
+
+.recommend-heading h2 {
+  margin: 0;
+}
+
+.recommend-arrow-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.recommend-arrow {
+  display: grid;
+  place-items: center;
+
+  width: 44px;
+  height: 44px;
+  padding: 0;
+
+  border: 1px solid #d9dce1;
+  border-radius: 50%;
+  background: #fff;
+
+  color: #111;
+  font-size: 30px;
+  line-height: 1;
+
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.recommend-arrow:hover {
+  background: #f1f2f4;
+  transform: translateY(-1px);
+}
+
+.recommend-arrow:active {
+  transform: scale(0.96);
+}
+
+/* スマホでは矢印を非表示 */
+@media (max-width: 768px) {
+  .recommend-arrow-buttons {
+    display: none;
+  }
+
+  .recommend-heading {
+    margin: 32px 0 16px;
+  }
+}
