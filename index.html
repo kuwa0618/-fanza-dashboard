@@ -268,7 +268,7 @@ async function loadRankings(period = "week") {
   }
 
  const rankingProducts = await Promise.all(
-  data.rankings.slice(0, 4).map(async (item) => {
+  data.rankings.slice(0, 20).map(async (item) => {
     try {
       const productResponse = await fetch(
         `/api/search?keyword=${encodeURIComponent(item.title)}&hits=1`
@@ -292,14 +292,16 @@ async function loadRankings(period = "week") {
   })
 );
 
-const visibleRankings = rankingProducts.filter(
-  (item) =>
-    item.product &&
-    (
-      item.product.imageURL?.large ||
-      item.product.imageURL?.list
-    )
-);
+const visibleRankings = rankingProducts
+  .filter(
+    (item) =>
+      item.product &&
+      (
+        item.product.imageURL?.large ||
+        item.product.imageURL?.list
+      )
+  )
+  .slice(0, 4);
   
 rankingList.innerHTML = visibleRankings
   .map((item, index) => {
@@ -322,6 +324,10 @@ rankingList.innerHTML = visibleRankings
       product?.price ||
       "";
 
+    const displayPrice = price
+  ? Number(price).toLocaleString("ja-JP")
+  : "";
+    
     const url =
       product?.affiliateURL ||
       product?.URL ||
@@ -356,7 +362,7 @@ rankingList.innerHTML = visibleRankings
           <div class="ranking-card-footer">
             <div>
               <strong class="ranking-card-price">
-                ${price ? `¥${escapeRankingText(price)}〜` : ""}
+              ${displayPrice ? `¥${displayPrice}〜` : ""} 
               </strong>
 
               <small>
