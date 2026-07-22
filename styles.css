@@ -269,3 +269,18 @@
 .recommend-carousel .price-row {
   margin-top: auto;
 }
+
+/* ===== 作品タイトルを2行固定 ===== */
+.card h3,
+.recommend-carousel .card h3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+
+  overflow: hidden;
+  line-height: 1.4;
+
+  height: 2.8em;
+  min-height: 2.8em;
+  max-height: 2.8em;
+}
