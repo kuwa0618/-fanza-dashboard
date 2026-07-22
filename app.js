@@ -672,9 +672,12 @@ async function fetchRecommendations() {
       );
     }
 
-    recommendationProducts =
+   recommendationProducts =
   asArray(data.products?.length ? data.products : data.recommendations)
-    .map(normalizeProduct);
+    .map(normalizeProduct)
+    .sort(() => Math.random() - 0.5);
+
+recommendationVisibleCount = 6;
 
     renderRecommendations();
   } catch (error) {
