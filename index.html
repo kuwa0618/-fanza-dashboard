@@ -68,6 +68,43 @@
  <h2>✨ 今日のおすすめ</h2>
   <div id="recommendResults" class="cards"></div>
 </section>
+
+ /* ===== カード高さを完全統一 ===== */
+
+/* カード全体 */
+.card {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 本文 */
+.card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* 出演者・説明文を2行固定 */
+.description {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+
+  line-height: 1.6;
+  min-height: 3.2em;
+  max-height: 3.2em;
+}
+
+/* タグの高さを固定 */
+.tags {
+  min-height: 30px;
+}
+
+/* フッターを最下部へ */
+.card-footer {
+  margin-top: auto;
+}
     
  <main>
   <section class="mood-panel">
@@ -194,30 +231,42 @@
       </div>
     </article>
   </template>
-<section class="ranking-section">
-  <div class="ranking-header">
-    <div>
-      <p class="ranking-kicker">サイト内のクリックから集計</p>
-      <h2>🏆 今人気の作品</h2>
-    </div>
+/* ===== カード高さを完全統一 ===== */
 
-    <div class="ranking-tabs" aria-label="ランキング期間">
-      <button type="button" class="ranking-tab is-active" data-period="week">
-        7日間
-      </button>
-      <button type="button" class="ranking-tab" data-period="today">
-        今日
-      </button>
-      <button type="button" class="ranking-tab" data-period="month">
-        30日間
-      </button>
-    </div>
-  </div>
+/* カード全体 */
+.card {
+  display: flex;
+  flex-direction: column;
+}
 
-  <div id="rankingList" class="ranking-list">
-    <p class="ranking-message">ランキングを読み込んでいます…</p>
-  </div>
-</section>
+/* 本文 */
+.card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* 出演者・説明文を2行固定 */
+.description {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+
+  line-height: 1.6;
+  min-height: 3.2em;
+  max-height: 3.2em;
+}
+
+/* タグの高さを固定 */
+.tags {
+  min-height: 30px;
+}
+
+/* フッターを最下部へ */
+.card-footer {
+  margin-top: auto;
+}
   <section class="ranking-section">
   <div class="section-header">
     <h2>⭐ みんなのお気に入りランキング</h2>
