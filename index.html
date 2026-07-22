@@ -324,9 +324,9 @@ rankingList.innerHTML = visibleRankings
       product?.price ||
       "";
 
-    const displayPrice = price
-  ? Number(price).toLocaleString("ja-JP")
-  : "";
+   const displayPrice = price
+  ? String(price).replace(/[^\d]/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+  : ""; 
     
     const url =
       product?.affiliateURL ||
