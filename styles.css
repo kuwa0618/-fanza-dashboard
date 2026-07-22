@@ -287,10 +287,6 @@
 
 /* ===== 今日のおすすめ・PC用左右矢印 ===== */
 .recommend-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
   margin: 40px 0 20px;
 }
 
@@ -298,46 +294,60 @@
   margin: 0;
 }
 
-.recommend-arrow-buttons {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.recommend-carousel-wrap {
+  position: relative;
 }
 
 .recommend-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 10;
+
   display: grid;
   place-items: center;
 
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   padding: 0;
 
-  border: 1px solid #d9dce1;
+  border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 50%;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.94);
 
   color: #111;
-  font-size: 30px;
+  font-size: 32px;
   line-height: 1;
 
   cursor: pointer;
+  transform: translateY(-50%);
+
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.16);
+
   transition:
     background 0.2s ease,
     transform 0.2s ease;
 }
 
+.recommend-arrow-prev {
+  left: 10px;
+}
+
+.recommend-arrow-next {
+  right: 10px;
+}
+
 .recommend-arrow:hover {
-  background: #f1f2f4;
-  transform: translateY(-1px);
+  background: #fff;
+  transform: translateY(-50%) scale(1.06);
 }
 
 .recommend-arrow:active {
-  transform: scale(0.96);
+  transform: translateY(-50%) scale(0.96);
 }
 
 /* スマホでは矢印を非表示 */
 @media (max-width: 768px) {
-  .recommend-arrow-buttons {
+  .recommend-arrow {
     display: none;
   }
 
