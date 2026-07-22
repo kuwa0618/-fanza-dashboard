@@ -295,8 +295,7 @@
 }
 
 .recommend-carousel-wrap {
-    position: relative;
-    overflow: hidden;
+  position: relative;
 }
 
 .recommend-arrow {
@@ -330,11 +329,11 @@
 }
 
 .recommend-arrow-prev {
-    left: -12px;
+  left: 8px;
 }
 
 .recommend-arrow-next {
-    right: -12px;
+  right: 8px;
 }
 
 .recommend-arrow:hover {
