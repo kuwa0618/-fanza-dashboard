@@ -267,49 +267,110 @@ async function loadRankings(period = "week") {
     return;
   }
 
- rankingList.innerHTML = data.rankings
+ const rankingProducts = await Promise.all(
+  data.rankings.slice(0, 4).map(async (item) => {
+    try {
+      const productResponse = await fetch(
+        `/api/search?keyword=${encodeURIComponent(item.title)}&hits=1`
+      );
+
+      const productData = await productResponse.json();
+      const product = productData.products?.[0] || null;
+
+      return {
+        ...item,
+        product,
+      };
+    } catch (error) {
+      console.error("ランキング作品の取得に失敗しました:", error);
+
+      return {
+        ...item,
+        product: null,
+      };
+    }
+  })
+);
+
+rankingList.innerHTML = rankingProducts
   .map((item) => {
-    const rawTitle = String(item.title || "作品名不明");
+    const product = item.product;
+
+    const rawTitle = String(
+      product?.title || item.title || "作品名不明"
+    );
+
     const title = escapeRankingText(rawTitle);
-    const encodedTitle = encodeURIComponent(rawTitle);
     const actress = escapeRankingText(item.actress || "");
 
-    return `
-      <button
-        type="button"
-        class="ranking-item ranking-link"
-        data-ranking-title="${encodedTitle}"
-      >
-        <div class="ranking-number">#${item.rank}</div>
+    const image =
+      product?.imageURL?.large ||
+      product?.imageURL?.list ||
+      "";
 
-        <div class="ranking-content">
-          <h3>${title}</h3>
-          <p>${actress}</p>
-          <small>
-            ${Number(item.clicks || 0)}クリック ／
-            この作品を見る →
-          </small>
+    const price =
+      product?.prices?.price ||
+      product?.price ||
+      "";
+
+    const url =
+      product?.affiliateURL ||
+      product?.URL ||
+      "#";
+
+    return `
+      <article class="ranking-product-card">
+        <div class="ranking-card-image-wrap">
+          <div class="ranking-number">#${item.rank}</div>
+
+          ${
+            image
+              ? `<img
+                  class="ranking-card-image"
+                  src="${escapeRankingText(image)}"
+                  alt="${title}"
+                  loading="lazy"
+                >`
+              : `<div class="ranking-card-no-image">IMAGE</div>`
+          }
         </div>
-      </button>
+
+        <div class="ranking-card-body">
+          <h3>${title}</h3>
+
+          ${
+            actress
+              ? `<p class="ranking-card-actress">出演：${actress}</p>`
+              : ""
+          }
+
+          <div class="ranking-card-footer">
+            <div>
+              <strong class="ranking-card-price">
+                ${price ? `¥${escapeRankingText(price)}〜` : ""}
+              </strong>
+
+              <small>
+                ${Number(item.clicks || 0)}クリック
+              </small>
+            </div>
+
+            <a
+              class="ranking-card-button"
+              href="${escapeRankingText(url)}"
+              target="_blank"
+              rel="nofollow sponsored noopener"
+            >
+              FANZA
+            </a>
+          </div>
+        </div>
+      </article>
     `;
   })
   .join("");
-
-rankingList
-  .querySelectorAll("[data-ranking-title]")
-  .forEach((button) => {
-    button.addEventListener("click", () => {
-      const title = decodeURIComponent(
-        button.dataset.rankingTitle || ""
-      );
-
-      if (title) {
-        searchByKeyword(title);
-      }
-    });
-  });
 }
-
+    
 function escapeRankingText(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
