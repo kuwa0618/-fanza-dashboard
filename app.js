@@ -694,10 +694,36 @@ function renderRecommendations() {
     section = document.createElement("section");
     section.id = "recommendSection";
     section.innerHTML = `
-  <h2 style="margin:40px 0 20px;">
-    ✨ 今日のおすすめ
-  </h2>
-      <div id="recommendResults" class="results recommend-carousel"></div>
+  section.innerHTML = `
+  <div class="recommend-heading">
+    <h2>✨ 今日のおすすめ</h2>
+
+    <div class="recommend-arrow-buttons">
+      <button
+        id="recommendPrevBtn"
+        class="recommend-arrow"
+        type="button"
+        aria-label="前の作品を見る"
+      >
+        ‹
+      </button>
+
+      <button
+        id="recommendNextBtn"
+        class="recommend-arrow"
+        type="button"
+        aria-label="次の作品を見る"
+      >
+        ›
+      </button>
+    </div>
+  </div>
+
+  <div
+    id="recommendResults"
+    class="results recommend-carousel"
+  ></div>
+
 <button
   id="recommendMoreBtn"
   type="button"
@@ -763,6 +789,32 @@ function renderRecommendations() {
 
     area.appendChild(node);
   });
+  const prevBtn = document.getElementById("recommendPrevBtn");
+const nextBtn = document.getElementById("recommendNextBtn");
+
+const scrollRecommendations = (direction) => {
+  const scrollAmount = Math.max(
+    area.clientWidth * 0.8,
+    260
+  );
+
+  area.scrollBy({
+    left: direction * scrollAmount,
+    behavior: "smooth"
+  });
+};
+
+if (prevBtn) {
+  prevBtn.onclick = () => {
+    scrollRecommendations(-1);
+  };
+}
+
+if (nextBtn) {
+  nextBtn.onclick = () => {
+    scrollRecommendations(1);
+  };
+}
   const moreBtn = document.getElementById("recommendMoreBtn");
 
 if (moreBtn) {
