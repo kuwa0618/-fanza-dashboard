@@ -697,32 +697,34 @@ function renderRecommendations() {
   <div class="recommend-heading">
     <h2>✨ 今日のおすすめ</h2>
 
-    <div class="recommend-arrow-buttons">
-      <button
-        id="recommendPrevBtn"
-        class="recommend-arrow"
-        type="button"
-        aria-label="前の作品を見る"
-      >
-        ‹
-      </button>
+   <div class="recommend-heading">
+  <h2>✨ 今日のおすすめ</h2>
+</div>
 
-      <button
-        id="recommendNextBtn"
-        class="recommend-arrow"
-        type="button"
-        aria-label="次の作品を見る"
-      >
-        ›
-      </button>
-    </div>
-  </div>
+<div class="recommend-carousel-wrap">
+  <button
+    id="recommendPrevBtn"
+    class="recommend-arrow recommend-arrow-prev"
+    type="button"
+    aria-label="前の作品を見る"
+  >
+    ‹
+  </button>
 
   <div
     id="recommendResults"
     class="results recommend-carousel"
   ></div>
 
+  <button
+    id="recommendNextBtn"
+    class="recommend-arrow recommend-arrow-next"
+    type="button"
+    aria-label="次の作品を見る"
+  >
+    ›
+  </button>
+</div> 
 <button
   id="recommendMoreBtn"
   type="button"
