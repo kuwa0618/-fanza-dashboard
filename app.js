@@ -694,7 +694,6 @@ function renderRecommendations() {
     section = document.createElement("section");
     section.id = "recommendSection";
     section.innerHTML = `
-  section.innerHTML = `
   <div class="recommend-heading">
     <h2>✨ 今日のおすすめ</h2>
 
