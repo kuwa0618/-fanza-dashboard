@@ -89,6 +89,7 @@ if (mode === "sale") {
   ? data.result.items
   : [];
 
+    console.log(JSON.stringify(products[0], null, 2));
     return res.status(200).json({
       success: true,
       keyword,
