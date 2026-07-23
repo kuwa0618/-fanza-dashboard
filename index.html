@@ -370,14 +370,19 @@ rankingList.innerHTML = visibleRankings
               </small>
             </div>
 
-            <a
-              class="ranking-card-button"
-              href="${escapeRankingText(url)}"
-              target="_blank"
-              rel="nofollow sponsored noopener"
-            >
-              FANZA
-            </a>
+         <a
+  class="ranking-card-button"
+  href="${escapeRankingText(url)}"
+  target="_blank"
+  rel="nofollow sponsored noopener"
+  data-content-id="${escapeRankingText(product?.content_id || product?.product_id || "")}"
+  data-title="${title}"
+  data-actress="${actress}"
+  data-maker="${escapeRankingText(item.maker || "")}"
+  data-genre="${escapeRankingText(item.genre || "")}"
+>
+  FANZA
+</a>
           </div>
         </div>
       </article>
@@ -629,6 +634,26 @@ document.querySelectorAll(".ranking-tab").forEach((btn) => {
 });
 
 loadAllRankings();
+document.addEventListener("click", (event) => {
+  const button = event.target.closest(".ranking-card-button");
+  if (!button) return;
+
+  fetch("/api/click", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      content_id: button.dataset.contentId,
+      title: button.dataset.title,
+      actress: button.dataset.actress,
+      maker: button.dataset.maker,
+      genre: button.dataset.genre,
+    }),
+  }).catch((error) => {
+    console.error("ランキングクリック記録に失敗しました:", error);
+  });
+});    
 </script>
   <script src="app.js"></script>
   <footer class="site-footer">
