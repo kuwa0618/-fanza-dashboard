@@ -253,6 +253,14 @@
   font-size:17px;
   line-height:1.5;
   margin-bottom:8px;
+
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:3;
+  overflow:hidden;
+
+  min-height:4.5em;
+  max-height:4.5em;
 }
 
 .ranking-card-actress{
