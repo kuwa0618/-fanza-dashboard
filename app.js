@@ -138,10 +138,6 @@ function normalizeProduct(product) {
     tags.push("新作");
   }
 
-  if (listPrice > price && price > 0) {
-    tags.push("セール");
-  }
-
   if (product.title?.includes("独占")) {
     tags.push("独占");
   }
