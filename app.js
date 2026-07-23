@@ -698,22 +698,9 @@ async function fetchHundredYen() {
       throw new Error(data.error || "100円作品を取得できませんでした。");
     }
 
-   hundredYenProducts = asArray(data.products)
+ hundredYenProducts = asArray(data.products)
   .map(normalizeProduct)
-  .filter(product => {
-    const title = (product.title || "").toLowerCase();
-
-    return (
-      title.includes("100円") ||
-      title.includes("50%off") ||
-      title.includes("70%off") ||
-      title.includes("80%off") ||
-      title.includes("90%off") ||
-      title.includes("半額") ||
-      title.includes("セール") ||
-      title.includes("sale")
-    );
-  });
+  .filter(product => product.tags.includes("セール"));
     renderHundredYen();
     
     console.log("100円作品:", hundredYenProducts.length);
