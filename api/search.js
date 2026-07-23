@@ -59,10 +59,9 @@ output: "json",
 if (mode === "recommend") {
   params.set("sort", "rank");
 }
- if (mode === "100yen") {
-  params.set("keyword", "100円");
+ if (mode === "sale") {
   params.set("sort", "rank");
-} 
+}
   try {
     const response = await fetch(
       `https://api.dmm.com/affiliate/v3/ItemList?${params.toString()}`,
