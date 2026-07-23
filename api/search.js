@@ -59,8 +59,9 @@ output: "json",
 if (mode === "recommend") {
   params.set("sort", "rank");
 }
- if (mode === "sale") {
+if (mode === "sale") {
   params.set("sort", "rank");
+  params.set("hits", "100");
 }
   try {
     const response = await fetch(
