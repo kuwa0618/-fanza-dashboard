@@ -829,40 +829,7 @@ if (moreBtn) {
   };
 }
 }
-function renderHundredYen() {
-  const area = document.getElementById("hundredYenResults");
-  if (!area) return;
 
-  area.innerHTML = "";
-
-  hundredYenProducts.slice(0, 12).forEach((product) => {
-    const node = template.content.cloneNode(true);
-
-    node.querySelector(".badge").textContent = "100円";
-    node.querySelector("h3").textContent = product.title;
-
-    setActressLinks(
-      product,
-      node.querySelector(".description")
-    );
-
-    setProductImage(
-      product,
-      node.querySelector(".placeholder")
-    );
-
-    node.querySelector(".price").textContent =
-      product.price > 0
-        ? `¥${product.price.toLocaleString()}〜`
-        : "価格はFANZAで確認";
-
-    const link = node.querySelector(".detail-link");
-    link.href = product.url;
-    link.target = "_blank";
-
-    area.appendChild(node);
-  });
-}
 function render() {
   const genre =
     $("genreFilter").value;
