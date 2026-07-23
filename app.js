@@ -687,6 +687,24 @@ recommendationVisibleCount = 6;
     );
   }
 }
+let hundredYenProducts = [];
+
+async function fetchHundredYen() {
+  try {
+    const response = await fetch("/api/search?mode=100yen");
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || "100円作品を取得できませんでした。");
+    }
+
+    hundredYenProducts = asArray(data.products).map(normalizeProduct);
+
+    console.log("100円作品:", hundredYenProducts.length);
+  } catch (error) {
+    console.error("100円作品取得失敗", error);
+  }
+}
 function renderRecommendations() {
   let section = document.getElementById("recommendSection");
 
