@@ -812,10 +812,11 @@ favoriteButton.addEventListener("click", () => {
     const link =
       node.querySelector(".detail-link");
 
-    link.href = product.url;
-    link.target = "_blank";
+   link.href = product.url;
+link.target = "_blank";
+link.rel = "noopener noreferrer sponsored";
 
-    area.appendChild(node);
+area.appendChild(node);
   });
   const prevBtn = document.getElementById("recommendPrevBtn");
 const nextBtn = document.getElementById("recommendNextBtn");
