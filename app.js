@@ -1059,7 +1059,9 @@ let filtered = showHistoryOnly
 
     detailLink.rel =
       "noopener noreferrer sponsored";
-    const history = JSON.parse(
+  
+    detailLink.addEventListener("click", () => {
+     const history = JSON.parse(
   localStorage.getItem("viewHistory") || "[]"
 );
 
@@ -1072,7 +1074,6 @@ localStorage.setItem(
   "viewHistory",
   JSON.stringify(newHistory)
 );
-    detailLink.addEventListener("click", () => {
       fetch("/api/click", {
         method: "POST",
         headers: {
@@ -1323,7 +1324,11 @@ $("favoritesBtn").addEventListener("click", () => {
   $("genreFilter").value = "";
   $("makerFilter").value = "";
   activeChip = "";
-
+  
+$("historyBtn").textContent = showHistoryOnly
+  ? "🕘 すべて表示"
+  : "🕘 閲覧履歴";
+  
   render();
 
   window.scrollTo({
