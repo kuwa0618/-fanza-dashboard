@@ -283,6 +283,20 @@ function setProductImage(
   image.style.cursor = "pointer";
 
   image.addEventListener("click", () => {
+   const history = JSON.parse(
+  localStorage.getItem("viewHistory") || "[]"
+);
+
+const newHistory = [
+  product,
+  ...history.filter((item) => item.id !== product.id),
+].slice(0, 50);
+
+localStorage.setItem(
+  "viewHistory",
+  JSON.stringify(newHistory)
+);
+    
     window.open(
       product.url,
       "_blank",
