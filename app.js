@@ -1332,6 +1332,23 @@ $("favoritesBtn").addEventListener("click", () => {
   });
 });
 
+$("historyBtn").addEventListener("click", () => {
+  showHistoryOnly = !showHistoryOnly;
+  showFavoritesOnly = false;
+
+  $("keyword").value = "";
+  $("genreFilter").value = "";
+  $("makerFilter").value = "";
+  activeChip = "";
+
+  render();
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+});
+
 $("clearMoodBtn").addEventListener("click", () => {
   $("activeMood").classList.add("hidden");
   $("activeMoodText").textContent = "";
