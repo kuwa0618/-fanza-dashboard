@@ -620,7 +620,17 @@ async function fetchProducts(
     products = append
       ? [...products, ...newProducts]
       : newProducts;
+    
+products.forEach((product) => {
+  if (favorites.includes(product.id)) {
+    favoriteProducts[product.id] = product;
+  }
+});
 
+localStorage.setItem(
+  "favoriteProducts",
+  JSON.stringify(favoriteProducts)
+);
     nextOffset +=
       newProducts.length;
 
@@ -1040,20 +1050,23 @@ let filtered = showFavoritesOnly
     console.error("クリック記録に失敗しました:", error);
   });
 });
-    results.appendChild(node);
-
-    
-   
+    results.appendChild(node);   
     
   });
 
   $("resultCount").textContent =
     filtered.length;
 
-  $("favoriteCount").textContent =
-    favorites.length;
+ $("favoriteCount").textContent =
+  favorites.length;
 
-  if (!filtered.length) {
+const favoriteCountElement = $("favoriteCount");
+
+if (favoriteCountElement) {
+  favoriteCountElement.textContent = favorites.length;
+}
+
+if (!filtered.length) {
     showMessage(
       "条件に一致する作品がありません。"
     );
@@ -1078,12 +1091,17 @@ function toggleFavorite(product) {
     JSON.stringify(favorites)
   );
 
-  localStorage.setItem(
-    "favoriteProducts",
-    JSON.stringify(favoriteProducts)
-  );
+localStorage.setItem(
+  "favorites",
+  JSON.stringify(favorites)
+);
 
-  render();
+localStorage.setItem(
+  "favoriteProducts",
+  JSON.stringify(favoriteProducts)
+);
+
+render();
 }
 $("searchBtn").addEventListener(
   "click",
@@ -1258,9 +1276,17 @@ let showFavoritesOnly = false;
 $("favoritesBtn").addEventListener("click", () => {
   showFavoritesOnly = !showFavoritesOnly;
 
-  $("favoritesBtn").textContent = showFavoritesOnly
-    ? "♡ すべて表示"
-    : `♡ お気に入り ${favorites.length}`;
+ $("favoritesBtn").addEventListener("click", () => {
+  showFavoritesOnly = !showFavoritesOnly;
+
+  $("favoritesBtn").innerHTML = showFavoritesOnly
+  ? `♡ すべて表示 <span id="favoriteCount" hidden>${favorites.length}</span>`
+  : `♡ お気に入り <span id="favoriteCount">${favorites.length}</span>`;
+
+  $("keyword").value = "";
+  $("genreFilter").value = "";
+  $("makerFilter").value = "";
+  activeChip = "";
 
   render();
 
