@@ -6,7 +6,7 @@ let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
 let favoriteProducts = JSON.parse(
   localStorage.getItem("favoriteProducts") || "{}"
 );
-
+let showHistoryOnly = false;
 let nextOffset = 1;
 let currentKeyword = "";
 let isLoadingMore = false;
@@ -869,11 +869,17 @@ function render() {
   const sort =
     $("sortFilter").value;
   
-let filtered = showFavoritesOnly
-  ? Object.values(favoriteProducts).filter((product) =>
-      favorites.includes(product.id)
-    )
-  : products.filter((product) => {
+const historyProducts = JSON.parse(
+  localStorage.getItem("viewHistory") || "[]"
+);
+
+let filtered = showHistoryOnly
+  ? historyProducts
+  : showFavoritesOnly
+    ? Object.values(favoriteProducts).filter((product) =>
+        favorites.includes(product.id)
+      )
+    : products.filter((product) => {
       return (
         (
           !genre ||
@@ -1053,6 +1059,19 @@ let filtered = showFavoritesOnly
 
     detailLink.rel =
       "noopener noreferrer sponsored";
+    const history = JSON.parse(
+  localStorage.getItem("viewHistory") || "[]"
+);
+
+const newHistory = [
+  product,
+  ...history.filter((item) => item.id !== product.id),
+].slice(0, 50);
+
+localStorage.setItem(
+  "viewHistory",
+  JSON.stringify(newHistory)
+);
     detailLink.addEventListener("click", () => {
       fetch("/api/click", {
         method: "POST",
