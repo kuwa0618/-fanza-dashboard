@@ -829,7 +829,22 @@ favoriteButton.addEventListener("click", () => {
    link.href = product.url;
 link.target = "_blank";
 link.rel = "noopener noreferrer sponsored";
+link.addEventListener("click", () => {
+  const history = JSON.parse(
+    localStorage.getItem("viewHistory") || "[]"
+  );
 
+  const newHistory = [
+    product,
+    ...history.filter((item) => item.id !== product.id),
+  ].slice(0, 50);
+
+  localStorage.setItem(
+    "viewHistory",
+    JSON.stringify(newHistory)
+  );
+});
+    
 area.appendChild(node);
   });
   const prevBtn = document.getElementById("recommendPrevBtn");
