@@ -3,6 +3,9 @@ let recommendationProducts = [];
 let recommendationVisibleCount = 6;
 let activeChip = "";
 let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+let favoriteProducts = JSON.parse(
+  localStorage.getItem("favoriteProducts") || "{}"
+);
 
 let nextOffset = 1;
 let currentKeyword = "";
@@ -837,7 +840,7 @@ function render() {
     $("sortFilter").value;
   
 let filtered = showFavoritesOnly
-  ? products.filter((product) =>
+  ? Object.values(favoriteProducts).filter((product) =>
       favorites.includes(product.id)
     )
   : products.filter((product) => {
@@ -983,8 +986,8 @@ let filtered = showFavoritesOnly
    favoriteButton.addEventListener("click", () => {
   const wasFavorite = favorites.includes(product.id);
 
-  toggleFavorite(product.id);
-
+  toggleFavorite(product);
+     
   if (!wasFavorite) {
     fetch("/api/favorite", {
       method: "POST",
@@ -1056,22 +1059,32 @@ let filtered = showFavoritesOnly
     );
   }
 }
-function toggleFavorite(id) {
-  favorites = favorites.includes(id)
-    ? favorites.filter(
-        (favoriteId) =>
-          favoriteId !== id
-      )
-    : [...favorites, id];
+function toggleFavorite(product) {
+  const id = product.id;
+
+  if (favorites.includes(id)) {
+    favorites = favorites.filter(
+      (favoriteId) => favoriteId !== id
+    );
+
+    delete favoriteProducts[id];
+  } else {
+    favorites = [...favorites, id];
+    favoriteProducts[id] = product;
+  }
 
   localStorage.setItem(
     "favorites",
     JSON.stringify(favorites)
   );
 
+  localStorage.setItem(
+    "favoriteProducts",
+    JSON.stringify(favoriteProducts)
+  );
+
   render();
 }
-
 $("searchBtn").addEventListener(
   "click",
   () => {
