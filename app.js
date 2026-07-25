@@ -1276,12 +1276,9 @@ let showFavoritesOnly = false;
 $("favoritesBtn").addEventListener("click", () => {
   showFavoritesOnly = !showFavoritesOnly;
 
- $("favoritesBtn").addEventListener("click", () => {
-  showFavoritesOnly = !showFavoritesOnly;
-
   $("favoritesBtn").innerHTML = showFavoritesOnly
-  ? `♡ すべて表示 <span id="favoriteCount" hidden>${favorites.length}</span>`
-  : `♡ お気に入り <span id="favoriteCount">${favorites.length}</span>`;
+    ? `♡ すべて表示 <span id="favoriteCount" hidden>${favorites.length}</span>`
+    : `♡ お気に入り <span id="favoriteCount">${favorites.length}</span>`;
 
   $("keyword").value = "";
   $("genreFilter").value = "";
