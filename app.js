@@ -1137,6 +1137,14 @@ function removeFromHistory(productId) {
 
   render();
 }
+function clearHistory() {
+  localStorage.removeItem("viewHistory");
+  showHistoryOnly = false;
+
+  $("historyBtn").textContent = "🕘 閲覧履歴";
+
+  render();
+}
 function toggleFavorite(product) {
   const id = product.id;
 
