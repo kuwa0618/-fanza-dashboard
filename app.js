@@ -1090,6 +1090,19 @@ localStorage.setItem(
     console.error("クリック記録に失敗しました:", error);
   });
 });
+      if (showHistoryOnly) {
+      const removeButton = document.createElement("button");
+
+      removeButton.textContent = "🗑 履歴から削除";
+      removeButton.className = "favorite";
+      removeButton.style.marginTop = "8px";
+
+      removeButton.addEventListener("click", () => {
+        removeFromHistory(product.id);
+      });
+
+      node.querySelector(".card").appendChild(removeButton);
+    }  
     results.appendChild(node);   
     
   });
@@ -1111,6 +1124,18 @@ if (!filtered.length) {
       "条件に一致する作品がありません。"
     );
   }
+}
+function removeFromHistory(productId) {
+  const history = JSON.parse(
+    localStorage.getItem("viewHistory") || "[]"
+  ).filter((item) => item.id !== productId);
+
+  localStorage.setItem(
+    "viewHistory",
+    JSON.stringify(history)
+  );
+
+  render();
 }
 function toggleFavorite(product) {
   const id = product.id;
@@ -1315,20 +1340,19 @@ let showFavoritesOnly = false;
 
 $("favoritesBtn").addEventListener("click", () => {
   showFavoritesOnly = !showFavoritesOnly;
+  showHistoryOnly = false;
 
   $("favoritesBtn").innerHTML = showFavoritesOnly
     ? `♡ すべて表示 <span id="favoriteCount" hidden>${favorites.length}</span>`
     : `♡ お気に入り <span id="favoriteCount">${favorites.length}</span>`;
 
+  $("historyBtn").textContent = "🕘 閲覧履歴";
+
   $("keyword").value = "";
   $("genreFilter").value = "";
   $("makerFilter").value = "";
   activeChip = "";
-  
-$("historyBtn").textContent = showHistoryOnly
-  ? "🕘 すべて表示"
-  : "🕘 閲覧履歴";
-  
+
   render();
 
   window.scrollTo({
@@ -1340,6 +1364,12 @@ $("historyBtn").textContent = showHistoryOnly
 $("historyBtn").addEventListener("click", () => {
   showHistoryOnly = !showHistoryOnly;
   showFavoritesOnly = false;
+
+  $("historyBtn").textContent = showHistoryOnly
+    ? "🕘 すべて表示"
+    : "🕘 閲覧履歴";
+
+  $("favoritesBtn").innerHTML = `♡ お気に入り <span id="favoriteCount">${favorites.length}</span>`;
 
   $("keyword").value = "";
   $("genreFilter").value = "";
