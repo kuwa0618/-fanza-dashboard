@@ -790,6 +790,25 @@ function renderRecommendations() {
         ? `¥${product.price.toLocaleString()}〜`
         : "価格はFANZAで確認";
 
+    const favoriteButton =
+  node.querySelector(".favorite");
+
+const isFavorite =
+  favorites.includes(product.id);
+
+favoriteButton.classList.toggle(
+  "active",
+  isFavorite
+);
+
+favoriteButton.textContent =
+  isFavorite ? "♥" : "♡";
+
+favoriteButton.addEventListener("click", () => {
+  toggleFavorite(product);
+  renderRecommendations();
+});
+    
     const link =
       node.querySelector(".detail-link");
 
