@@ -938,6 +938,24 @@ function renderSaleProducts(saleProducts) {
         id="saleResults"
         class="results"
       ></div>
+           <button
+        id="saleMoreBtn"
+        type="button"
+        style="
+          display:block;
+          margin:32px auto;
+          padding:14px 36px;
+          border:0;
+          border-radius:999px;
+          background:#111;
+          color:#fff;
+          font-size:16px;
+          font-weight:700;
+          cursor:pointer;
+        "
+      >
+        セール作品をもっと見る
+      </button> 
     `;
 
     const recommendSection =
