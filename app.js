@@ -1505,7 +1505,6 @@ $("resetBtn").addEventListener(
           "active"
         );
       });
-    fetchSaleProducts();
 
     const url =
       new URL(window.location.href);
@@ -1657,3 +1656,5 @@ if (actressFromUrl) {
 
 fetchProducts(false);
 fetchRecommendations();
+
+fetchSaleProducts();
