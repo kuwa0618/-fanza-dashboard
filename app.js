@@ -3,6 +3,9 @@ let recommendationProducts = [];
 let recommendationVisibleCount = 6;
 let saleProducts = [];
 let saleVisibleCount = 6;
+
+let relatedSourceProduct =
+  JSON.parse(localStorage.getItem("relatedSourceProduct") || "null");
 let activeChip = "";
 let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
 let favoriteProducts = JSON.parse(
