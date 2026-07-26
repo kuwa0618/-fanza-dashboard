@@ -1732,6 +1732,7 @@ $("keyword").addEventListener("input", () => {
   const keyword = $("keyword").value.trim();
 
   clearTimeout(autocompleteTimer);
+  autocompleteIndex = -1;
 
   if (!keyword) {
     autocompleteList.innerHTML = "";
@@ -1743,7 +1744,7 @@ $("keyword").addEventListener("input", () => {
     try {
       const params = new URLSearchParams({
         keyword,
-        hits: "5",
+        hits: "20",
         offset: "1",
       });
 
@@ -1759,28 +1760,40 @@ $("keyword").addEventListener("input", () => {
         );
       }
 
-      const matchedProducts = asArray(data.products)
-        .map(normalizeProduct)
-        .slice(0, 5);
+      const lowerKeyword = keyword.toLowerCase();
+
+      const actressNames = [
+        ...new Set(
+          asArray(data.products)
+            .flatMap((product) =>
+              getItemInfoNames(product, "actress")
+            )
+            .filter((actress) =>
+              actress
+                .toLowerCase()
+                .includes(lowerKeyword)
+            )
+        ),
+      ].slice(0, 5);
 
       autocompleteList.innerHTML = "";
 
-      if (!matchedProducts.length) {
+      if (!actressNames.length) {
         autocompleteList.style.display = "none";
         return;
       }
 
-      matchedProducts.forEach((product) => {
+      actressNames.forEach((actress) => {
         const item = document.createElement("div");
 
-        item.textContent = product.title;
+        item.textContent = actress;
         item.className = "autocomplete-item";
 
         item.addEventListener("click", () => {
-          $("keyword").value = product.title;
           autocompleteList.innerHTML = "";
           autocompleteList.style.display = "none";
-          fetchProducts(false);
+
+          openActressPage(actress);
         });
 
         item.addEventListener("mouseenter", () => {
