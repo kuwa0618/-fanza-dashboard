@@ -1726,72 +1726,87 @@ if (autocompleteIndex >= 0 && items[autocompleteIndex]) {
     }
   }
 );
-$("keyword").addEventListener(
-  "input",
-  () => {
-const keyword = $("keyword").value.trim();
-if (!keyword) {
-  autocompleteList.innerHTML = "";
-  autocompleteList.style.display = "none";
-  return;
-}
-    
- const lowerKeyword = keyword.toLowerCase();
+let autocompleteTimer = null;
 
-const matchedProducts = products.filter((product) => {
-  const titleMatch =
-    product.title.toLowerCase().includes(lowerKeyword);
+$("keyword").addEventListener("input", () => {
+  const keyword = $("keyword").value.trim();
 
-  const actressMatch =
-    product.actresses.some((actress) =>
-      actress.toLowerCase().includes(lowerKeyword)
-    );
+  clearTimeout(autocompleteTimer);
 
-  const makerMatch =
-    product.maker.toLowerCase().includes(lowerKeyword);
+  if (!keyword) {
+    autocompleteList.innerHTML = "";
+    autocompleteList.style.display = "none";
+    return;
+  }
 
-  const genreMatch =
-    product.genres.some((genre) =>
-      genre.toLowerCase().includes(lowerKeyword)
-    );
+  autocompleteTimer = setTimeout(async () => {
+    try {
+      const params = new URLSearchParams({
+        keyword,
+        hits: "5",
+        offset: "1",
+      });
 
-  return (
-    titleMatch ||
-    actressMatch ||
-    makerMatch ||
-    genreMatch
-  );
+      const response = await fetch(
+        `/api/search?${params.toString()}`
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.error || "候補を取得できませんでした。"
+        );
+      }
+
+      const matchedProducts = asArray(data.products)
+        .map(normalizeProduct)
+        .slice(0, 5);
+
+      autocompleteList.innerHTML = "";
+
+      if (!matchedProducts.length) {
+        autocompleteList.style.display = "none";
+        return;
+      }
+
+      matchedProducts.forEach((product) => {
+        const item = document.createElement("div");
+
+        item.textContent = product.title;
+        item.className = "autocomplete-item";
+
+        item.addEventListener("click", () => {
+          $("keyword").value = product.title;
+          autocompleteList.innerHTML = "";
+          autocompleteList.style.display = "none";
+          fetchProducts(false);
+        });
+
+        item.addEventListener("mouseenter", () => {
+          item.classList.add("active");
+        });
+
+        item.addEventListener("mouseleave", () => {
+          item.classList.remove("active");
+        });
+
+        autocompleteList.appendChild(item);
+      });
+
+      autocompleteList.classList.remove("hidden");
+      autocompleteList.style.display = "block";
+    } catch (error) {
+      console.error(
+        "オートコンプリート取得に失敗しました。",
+        error
+      );
+
+      autocompleteList.innerHTML = "";
+      autocompleteList.style.display = "none";
+    }
+  }, 300);
 });
-    
-console.log("products:", products.length, "matched:", matchedProducts.length);    
-matchedProducts.slice(0, 5).forEach((product) => {
-  const item = document.createElement("div");
-
-  item.textContent = product.title;
-  item.className = "autocomplete-item";
-
-  item.addEventListener("click", () => {
-  $("keyword").value = product.title;
-  autocompleteList.innerHTML = "";
-  fetchProducts(false);
-});
-  
-autocompleteList.classList.remove("hidden");
-autocompleteList.appendChild(item);
-autocompleteList.style.display = "block";
-  
- item.addEventListener("mouseenter", () => {
-  item.classList.add("active");
-});
-
-item.addEventListener("mouseleave", () => {
-  item.classList.remove("active");
-});
-  
-}); 
-if (matchedProducts.length === 0) {
-  autocompleteList.style.display = "none";
-}    
   }
 );
 document.addEventListener("click", (event) => {
