@@ -1680,7 +1680,7 @@ $("keyword").addEventListener(
 $("keyword").addEventListener(
   "input",
   () => {
-
+const keyword = $("keyword").value.trim();
   }
 );
 [
