@@ -1681,11 +1681,11 @@ $("keyword").addEventListener(
   "input",
   () => {
 const keyword = $("keyword").value.trim();
-if (!keyword) return;   
-
- autocompleteList.innerHTML = ""; 
- autocompleteList.innerHTML = "";
- autocompleteList.style.display = "none";   
+if (!keyword) {
+  autocompleteList.innerHTML = "";
+  autocompleteList.style.display = "none";
+  return;
+}
     
   const matchedProducts = products.filter((product) =>
   product.title.toLowerCase().includes(keyword.toLowerCase())
@@ -1704,9 +1704,27 @@ matchedProducts.slice(0, 5).forEach((product) => {
   
   autocompleteList.appendChild(item);
   autocompleteList.style.display = "block";
-});    
+
+ item.addEventListener("mouseenter", () => {
+  item.classList.add("active");
+});
+
+item.addEventListener("mouseleave", () => {
+  item.classList.remove("active");
+});
+  
+}); 
+if (matchedProducts.length === 0) {
+  autocompleteList.style.display = "none";
+}    
   }
 );
+document.addEventListener("click", (event) => {
+  if (!autocompleteList.contains(event.target) && event.target !== $("keyword")) {
+    autocompleteList.innerHTML = "";
+    autocompleteList.style.display = "none";
+  }
+});
 [
   "genreFilter",
   "makerFilter",
@@ -1716,6 +1734,12 @@ matchedProducts.slice(0, 5).forEach((product) => {
     "change",
     render
   );
+});
+
+$("keyword").addEventListener("focus", () => {
+  if (autocompleteList.children.length > 0) {
+    autocompleteList.style.display = "block";
+  }
 });
 
 document
@@ -1730,6 +1754,30 @@ document
             ? ""
             : button.dataset.chip;
 
+window.addEventListener("scroll", () => {
+  autocompleteList.style.display = "none";
+});
+
+window.addEventListener("resize", () => {
+  autocompleteList.style.display = "none";
+});
+
+ $("keyword").addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    autocompleteList.innerHTML = "";
+    autocompleteList.style.display = "none";
+  }
+});
+
+autocompleteList.addEventListener("mousedown", (event) => {
+  event.preventDefault();
+});
+
+$("keyword").setAttribute("autocomplete", "off");
+$("keyword").setAttribute("spellcheck", "false");   
+$("keyword").setAttribute("autocapitalize", "off");
+$("keyword").setAttribute("autocorrect", "off");
+$("keyword").setAttribute("autocomplete", "new-password");        
         document
           .querySelectorAll(
             "[data-chip]"
