@@ -1684,6 +1684,8 @@ const keyword = $("keyword").value.trim();
 if (!keyword) return;   
 
  autocompleteList.innerHTML = ""; 
+ autocompleteList.innerHTML = "";
+ autocompleteList.style.display = "none";   
     
   const matchedProducts = products.filter((product) =>
   product.title.toLowerCase().includes(keyword.toLowerCase())
@@ -1694,7 +1696,14 @@ matchedProducts.slice(0, 5).forEach((product) => {
   item.textContent = product.title;
   item.className = "autocomplete-item";
 
+  item.addEventListener("click", () => {
+  $("keyword").value = product.title;
+  autocompleteList.innerHTML = "";
+  fetchProducts(false);
+});
+  
   autocompleteList.appendChild(item);
+  autocompleteList.style.display = "block";
 });    
   }
 );
