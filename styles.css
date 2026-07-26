@@ -391,4 +391,8 @@
 /* フッターを最下部へ */
 .card-footer {
   margin-top: auto;
+  .results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
 }
