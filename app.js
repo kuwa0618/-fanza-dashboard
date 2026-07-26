@@ -989,9 +989,22 @@ function renderSaleProducts(saleProducts) {
       (1 - product.price / product.listPrice) * 100
     );
 
-    node.querySelector(".badge").textContent =
+       const saleBadge =
+      node.querySelector(".badge");
+
+    saleBadge.textContent =
       `${discountRate}%OFF`;
 
+    Object.assign(saleBadge.style, {
+      background: "#e60023",
+      color: "#fff",
+      fontWeight: "800",
+      fontSize: "14px",
+      padding: "6px 10px",
+      borderRadius: "999px",
+      boxShadow: "0 3px 10px rgba(230, 0, 35, 0.25)",
+    });
+    
     node.querySelector("h3").textContent =
       product.title;
 
@@ -1005,12 +1018,27 @@ function renderSaleProducts(saleProducts) {
       node.querySelector(".placeholder")
     );
 
-    node.querySelector(".price").textContent =
-      `¥${product.price.toLocaleString()}〜`;
+      const priceElement =
+      node.querySelector(".price");
 
-    node.querySelector(".rating").textContent =
-      `通常 ¥${product.listPrice.toLocaleString()}`;
-
+    priceElement.innerHTML = `
+      <span style="
+        color:#e60023;
+        font-size:22px;
+        font-weight:800;
+      ">
+        ¥${product.price.toLocaleString()}〜
+      </span>
+      <br>
+      <span style="
+        color:#777;
+        font-size:13px;
+        text-decoration:line-through;
+      ">
+        通常 ¥${product.listPrice.toLocaleString()}
+      </span>
+    `;
+    
     const favoriteButton =
       node.querySelector(".favorite");
 
