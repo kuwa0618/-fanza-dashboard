@@ -1654,6 +1654,29 @@ $("searchBtn").addEventListener(
 );
 
 $("keyword").addEventListener(
+  keywordInput.addEventListener("input", () => {
+  const keyword = keywordInput.value.trim().toLowerCase();
+
+  if (!keyword) {
+    autocompleteList.classList.add("hidden");
+    autocompleteList.innerHTML = "";
+    return;
+  }
+
+  const list = products
+    .filter(p =>
+      (p.title || "").toLowerCase().includes(keyword)
+    )
+    .slice(0, 5);
+
+  autocompleteList.innerHTML = list.map(p => `
+    <div class="autocomplete-item">
+      ${p.title}
+    </div>
+  `).join("");
+
+  autocompleteList.classList.toggle("hidden", list.length === 0);
+});
   "keydown",
   (event) => {
     if (event.key === "Enter") {
