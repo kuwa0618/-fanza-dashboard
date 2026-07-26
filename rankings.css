@@ -242,6 +242,41 @@
   font-weight: bold;
 }
 
+.ranking-hot-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  padding: 7px 12px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  background: #e60023;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(230, 0, 35, 0.3);
+}
+
+.ranking-product-card:nth-child(1) {
+  border: 2px solid #e5b800;
+  box-shadow: 0 8px 24px rgba(229, 184, 0, 0.18);
+}
+
+.ranking-product-card:nth-child(1) .ranking-number {
+  color: #111;
+  background: #ffd700;
+  border-color: #e5b800;
+}
+
+@media (max-width: 760px) {
+  .ranking-hot-badge {
+    top: 10px;
+    right: 10px;
+    padding: 6px 9px;
+    font-size: 11px;
+  }
+}
+
 .ranking-card-body {
   padding:16px;
   display:flex;
