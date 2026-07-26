@@ -1706,9 +1706,9 @@ matchedProducts.slice(0, 5).forEach((product) => {
   fetchProducts(false);
 });
   
-  autocompleteList.appendChild(item);
-  autocompleteList.style.display = "block";
-　autocompleteList.classList.remove("hidden");
+autocompleteList.classList.remove("hidden");
+autocompleteList.appendChild(item);
+autocompleteList.style.display = "block";
   
  item.addEventListener("mouseenter", () => {
   item.classList.add("active");
