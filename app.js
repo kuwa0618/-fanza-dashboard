@@ -1072,7 +1072,7 @@ function renderSaleProducts(saleProducts) {
       renderSaleProducts(saleProducts);
     };
   }
-
+}
 function render() {
   const genre =
     $("genreFilter").value;
