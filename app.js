@@ -887,6 +887,157 @@ if (moreBtn) {
   };
 }
 }
+async function fetchSaleProducts() {
+  try {
+    const response = await fetch("/api/search?mode=sale");
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.error ||
+        "セール作品を取得できませんでした。"
+      );
+    }
+
+    const saleProducts = asArray(data.products)
+      .map(normalizeProduct)
+      .filter((product) => {
+        return (
+          product.listPrice > product.price &&
+          product.price > 0
+        );
+      })
+      .slice(0, 6);
+
+    renderSaleProducts(saleProducts);
+  } catch (error) {
+    console.error(
+      "セール作品の取得に失敗しました。",
+      error
+    );
+  }
+}
+
+function renderSaleProducts(saleProducts) {
+  let section =
+    document.getElementById("saleSection");
+
+  if (!section) {
+    section = document.createElement("section");
+    section.id = "saleSection";
+
+    section.innerHTML = `
+      <div class="recommend-heading">
+        <h2>🔥 セール作品</h2>
+      </div>
+
+      <div
+        id="saleResults"
+        class="results"
+      ></div>
+    `;
+
+    const recommendSection =
+      document.getElementById("recommendSection");
+
+    if (recommendSection) {
+      recommendSection.after(section);
+    } else {
+      results.before(section);
+    }
+  }
+
+  const area =
+    document.getElementById("saleResults");
+
+  area.innerHTML = "";
+
+  saleProducts.forEach((product) => {
+    const node =
+      template.content.cloneNode(true);
+
+    const discountRate = Math.round(
+      (1 - product.price / product.listPrice) * 100
+    );
+
+    node.querySelector(".badge").textContent =
+      `${discountRate}%OFF`;
+
+    node.querySelector("h3").textContent =
+      product.title;
+
+    setActressLinks(
+      product,
+      node.querySelector(".description")
+    );
+
+    setProductImage(
+      product,
+      node.querySelector(".placeholder")
+    );
+
+    node.querySelector(".price").textContent =
+      `¥${product.price.toLocaleString()}〜`;
+
+    node.querySelector(".rating").textContent =
+      `通常 ¥${product.listPrice.toLocaleString()}`;
+
+    const favoriteButton =
+      node.querySelector(".favorite");
+
+    const isFavorite =
+      favorites.includes(product.id);
+
+    favoriteButton.classList.toggle(
+      "active",
+      isFavorite
+    );
+
+    favoriteButton.textContent =
+      isFavorite ? "♥" : "♡";
+
+    favoriteButton.addEventListener(
+      "click",
+      () => {
+        toggleFavorite(product);
+        renderSaleProducts(saleProducts);
+      }
+    );
+
+    const link =
+      node.querySelector(".detail-link");
+
+    link.href = product.url;
+    link.target = "_blank";
+    link.rel =
+      "noopener noreferrer sponsored";
+
+    link.addEventListener("click", () => {
+      const history = JSON.parse(
+        localStorage.getItem("viewHistory") ||
+        "[]"
+      );
+
+      const newHistory = [
+        product,
+        ...history.filter(
+          (item) => item.id !== product.id
+        ),
+      ].slice(0, 50);
+
+      localStorage.setItem(
+        "viewHistory",
+        JSON.stringify(newHistory)
+      );
+    });
+
+    area.appendChild(node);
+  });
+
+  section.style.display =
+    saleProducts.length ? "block" : "none";
+}
 
 function render() {
   const genre =
@@ -1354,6 +1505,7 @@ $("resetBtn").addEventListener(
           "active"
         );
       });
+    fetchSaleProducts();
 
     const url =
       new URL(window.location.href);
