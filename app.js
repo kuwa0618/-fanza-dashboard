@@ -902,14 +902,20 @@ async function fetchSaleProducts() {
       );
     }
 
-    saleProducts = asArray(data.products)
-  .map(normalizeProduct)
-  .filter((product) => {
-    return (
-      product.listPrice > product.price &&
-      product.price > 0
-    );
-  });
+       saleProducts = asArray(data.products)
+      .map(normalizeProduct)
+      .filter((product) => {
+        return (
+          product.listPrice > product.price &&
+          product.price > 0
+        );
+      })
+      .sort((a, b) => {
+        const discountA = 1 - a.price / a.listPrice;
+        const discountB = 1 - b.price / b.listPrice;
+
+        return discountB - discountA;
+      });
 
 saleVisibleCount = 6;
     renderSaleProducts(saleProducts);
