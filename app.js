@@ -1687,7 +1687,15 @@ if (!keyword) return;
     
   const matchedProducts = products.filter((product) =>
   product.title.toLowerCase().includes(keyword.toLowerCase())
-);  
+);
+matchedProducts.slice(0, 5).forEach((product) => {
+  const item = document.createElement("div");
+
+  item.textContent = product.title;
+  item.className = "autocomplete-item";
+
+  autocompleteList.appendChild(item);
+});    
   }
 );
 [
