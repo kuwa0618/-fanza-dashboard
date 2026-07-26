@@ -454,7 +454,7 @@ function openActressPage(actress) {
   });
 }
 
-function searchByKeyword(keyword) {
+function searchByKeyword(keyword, scrollToTop = true) {
   const url =
     new URL(window.location.href);
 
@@ -468,6 +468,7 @@ function searchByKeyword(keyword) {
 
   fetchProducts(false);
 
+if (scrollToTop) {
   window.scrollTo({
     top: 0,
     behavior: "smooth",
@@ -1883,7 +1884,7 @@ $("activeMood").classList.remove("hidden");
       moodButton === button
     );
   }); 
-      searchByKeyword(keyword);
+     searchByKeyword(keyword, false); 
     });
   });
 $("resetBtn").addEventListener(
