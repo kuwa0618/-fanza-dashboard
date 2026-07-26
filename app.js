@@ -1059,7 +1059,19 @@ function renderSaleProducts(saleProducts) {
 
   section.style.display =
     saleProducts.length ? "block" : "none";
-}
+    const moreBtn = document.getElementById("saleMoreBtn");
+
+  if (moreBtn) {
+    moreBtn.style.display =
+      saleVisibleCount < saleProducts.length
+        ? "block"
+        : "none";
+
+    moreBtn.onclick = () => {
+      saleVisibleCount += 6;
+      renderSaleProducts(saleProducts);
+    };
+  }
 
 function render() {
   const genre =
