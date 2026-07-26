@@ -20,17 +20,11 @@ export default async function handler(request, response) {
     const now = new Date();
     let startDate = null;
 
-    if (period === "today") {
+       if (period === "today") {
       startDate = new Date(
-        Date.UTC(
-          now.getUTCFullYear(),
-          now.getUTCMonth(),
-          now.getUTCDate()
-        )
+        now.getTime() - 24 * 60 * 60 * 1000
       );
-
-      startDate.setUTCHours(startDate.getUTCHours() - 9);
-    }
+    } 
 
     if (period === "week") {
       startDate = new Date(now);
