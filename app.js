@@ -1,6 +1,8 @@
 let products = [];
 let recommendationProducts = [];
 let recommendationVisibleCount = 6;
+let saleProducts = [];
+let saleVisibleCount = 6;
 let activeChip = "";
 let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
 let favoriteProducts = JSON.parse(
@@ -900,16 +902,16 @@ async function fetchSaleProducts() {
       );
     }
 
-    const saleProducts = asArray(data.products)
-      .map(normalizeProduct)
-      .filter((product) => {
-        return (
-          product.listPrice > product.price &&
-          product.price > 0
-        );
-      })
-      .slice(0, 6);
+    saleProducts = asArray(data.products)
+  .map(normalizeProduct)
+  .filter((product) => {
+    return (
+      product.listPrice > product.price &&
+      product.price > 0
+    );
+  });
 
+saleVisibleCount = 6;
     renderSaleProducts(saleProducts);
   } catch (error) {
     console.error(
@@ -953,7 +955,9 @@ function renderSaleProducts(saleProducts) {
 
   area.innerHTML = "";
 
-  saleProducts.forEach((product) => {
+ saleProducts
+  .slice(0, saleVisibleCount)
+  .forEach((product) => {
     const node =
       template.content.cloneNode(true);
 
