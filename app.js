@@ -915,8 +915,10 @@ async function fetchSaleProducts() {
         const discountB = 1 - b.price / b.listPrice;
 
         return discountB - discountA;
-      });
-
+      })
+      .slice(0, 60)
+      .sort(() => Math.random() - 0.5);
+    
 saleVisibleCount = 6;
     renderSaleProducts(saleProducts);
   } catch (error) {
