@@ -470,6 +470,21 @@ function searchByKeyword(keyword) {
   });
 }
 
+document
+  .querySelectorAll("[data-popular-keyword]")
+  .forEach((button) => {
+    button.addEventListener("click", () => {
+      const keyword =
+        button.dataset.popularKeyword || "";
+
+      if (!keyword) {
+        return;
+      }
+
+      searchByKeyword(keyword);
+    });
+  });
+
 function createSearchButton(text) {
   const button =
     document.createElement("button");
