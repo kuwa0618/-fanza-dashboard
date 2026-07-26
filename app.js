@@ -1681,6 +1681,7 @@ $("keyword").addEventListener(
   "input",
   () => {
 const keyword = $("keyword").value.trim();
+    
 if (!keyword) return;    
   }
 );
