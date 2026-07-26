@@ -336,9 +336,17 @@ rankingList.innerHTML = visibleRankings
       "#";
 
     return `
-      <article class="ranking-product-card">
-        <div class="ranking-card-image-wrap">
-          <div class="ranking-number">#${index + 1}</div>
+     <article class="ranking-product-card">
+  <div class="ranking-card-image-wrap">
+    <div class="ranking-number">#${index + 1}</div>
+
+    ${
+      index === 0
+        ? `<div class="ranking-hot-badge">🏆 人気No.1</div>`
+        : index < 3
+          ? `<div class="ranking-hot-badge">🔥 急上昇</div>`
+          : ""
+    } 
 
           ${
             image
