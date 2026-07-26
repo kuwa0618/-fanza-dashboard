@@ -1693,6 +1693,7 @@ if (!keyword) {
   const matchedProducts = products.filter((product) =>
   product.title.toLowerCase().includes(keyword.toLowerCase())
 );
+console.log("products:", products.length, "matched:", matchedProducts.length);    
 matchedProducts.slice(0, 5).forEach((product) => {
   const item = document.createElement("div");
 
