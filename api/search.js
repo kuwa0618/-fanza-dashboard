@@ -85,9 +85,42 @@ if (mode === "sale") {
       });
     }
 
-    const products = Array.isArray(data.result.items)
+   let products = Array.isArray(data.result.items)
   ? data.result.items
   : [];
+
+if (mode === "sale") {
+  products = products.filter((product) => {
+    const deliveries = Array.isArray(
+      product?.prices?.deliveries?.delivery
+    )
+      ? product.prices.deliveries.delivery
+      : product?.prices?.deliveries?.delivery
+      ? [product.prices.deliveries.delivery]
+      : [];
+
+    const prices = [
+      {
+        price: product?.prices?.price,
+        listPrice: product?.prices?.list_price,
+      },
+      ...deliveries.map((delivery) => ({
+        price: delivery?.price,
+        listPrice: delivery?.list_price,
+      })),
+    ];
+
+    return prices.some(({ price, listPrice }) => {
+      const salePrice =
+        Number(String(price || "").replace(/[^\d]/g, "")) || 0;
+
+      const regularPrice =
+        Number(String(listPrice || "").replace(/[^\d]/g, "")) || 0;
+
+      return regularPrice > salePrice && salePrice > 0;
+    });
+  });
+}
 
     console.log(JSON.stringify(products[0], null, 2));
     return res.status(200).json({
