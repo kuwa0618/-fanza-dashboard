@@ -1677,7 +1677,12 @@ $("keyword").addEventListener(
     }
   }
 );
+$("keyword").addEventListener(
+  "input",
+  () => {
 
+  }
+);
 [
   "genreFilter",
   "makerFilter",
