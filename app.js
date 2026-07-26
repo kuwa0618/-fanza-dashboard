@@ -1679,6 +1679,13 @@ if (event.key === "ArrowDown") {
     0
   );
 }
+
+items.forEach((item, index) => {
+  item.classList.toggle(
+    "active",
+    index === autocompleteIndex
+  );
+});
     
     if (event.key === "Enter") {
       const url =
@@ -1697,6 +1704,20 @@ if (event.key === "ArrowDown") {
       );
 
       setDefaultPageState();
+
+if (autocompleteIndex >= 0 && items[autocompleteIndex]) {
+  event.preventDefault();
+
+  $("keyword").value =
+    items[autocompleteIndex].textContent;
+
+  autocompleteList.innerHTML = "";
+  autocompleteList.style.display = "none";
+
+  fetchProducts(false);
+  return;
+}
+      
       fetchProducts(false);
     }
   }
