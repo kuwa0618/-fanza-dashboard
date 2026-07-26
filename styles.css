@@ -449,3 +449,40 @@
     font-size: 12px;
   }
 }
+
+.search-panel {
+  position: relative;
+}
+
+.autocomplete-list {
+  position: absolute;
+  z-index: 50;
+  top: 112px;
+  left: 18px;
+  right: 92px;
+
+  overflow: hidden;
+
+  background: #fff;
+  border: 1px solid #d8dce2;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+}
+
+.autocomplete-item {
+  padding: 12px 14px;
+  border-bottom: 1px solid #e5e7eb;
+
+  font-size: 14px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.autocomplete-item:last-child {
+  border-bottom: 0;
+}
+
+.autocomplete-item:hover,
+.autocomplete-item.active {
+  background: #f1f3f5;
+}
