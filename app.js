@@ -1736,9 +1736,33 @@ if (!keyword) {
   return;
 }
     
-  const matchedProducts = products.filter((product) =>
-  product.title.toLowerCase().includes(keyword.toLowerCase())
-);
+ const lowerKeyword = keyword.toLowerCase();
+
+const matchedProducts = products.filter((product) => {
+  const titleMatch =
+    product.title.toLowerCase().includes(lowerKeyword);
+
+  const actressMatch =
+    product.actresses.some((actress) =>
+      actress.toLowerCase().includes(lowerKeyword)
+    );
+
+  const makerMatch =
+    product.maker.toLowerCase().includes(lowerKeyword);
+
+  const genreMatch =
+    product.genres.some((genre) =>
+      genre.toLowerCase().includes(lowerKeyword)
+    );
+
+  return (
+    titleMatch ||
+    actressMatch ||
+    makerMatch ||
+    genreMatch
+  );
+});
+    
 console.log("products:", products.length, "matched:", matchedProducts.length);    
 matchedProducts.slice(0, 5).forEach((product) => {
   const item = document.createElement("div");
