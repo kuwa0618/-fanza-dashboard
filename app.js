@@ -832,6 +832,7 @@ favoriteButton.addEventListener("click", () => {
 link.target = "_blank";
 link.rel = "noopener noreferrer sponsored";
 link.addEventListener("click", () => {
+  saveRelatedSource(product);
   const history = JSON.parse(
     localStorage.getItem("viewHistory") || "[]"
   );
@@ -920,7 +921,8 @@ async function fetchSaleProducts() {
       .sort(() => Math.random() - 0.5);
     
 saleVisibleCount = 6;
-    renderSaleProducts(saleProducts);
+   renderSaleProducts(saleProducts);
+renderRelatedProducts(); 
   } catch (error) {
     console.error(
       "セール作品の取得に失敗しました。",
@@ -1072,6 +1074,7 @@ function renderSaleProducts(saleProducts) {
       "noopener noreferrer sponsored";
 
     link.addEventListener("click", () => {
+  saveRelatedSource(product);
       const history = JSON.parse(
         localStorage.getItem("viewHistory") ||
         "[]"
@@ -1109,6 +1112,193 @@ function renderSaleProducts(saleProducts) {
     };
   }
 }
+function saveRelatedSource(product) {
+  relatedSourceProduct = product;
+
+  localStorage.setItem(
+    "relatedSourceProduct",
+    JSON.stringify(product)
+  );
+
+  renderRelatedProducts();
+}
+
+function getRelatedScore(product, sourceProduct) {
+  let score = 0;
+
+  const sameActresses = product.actresses.filter(
+    (actress) =>
+      sourceProduct.actresses.includes(actress)
+  );
+
+  const sameGenres = product.genres.filter(
+    (genre) =>
+      sourceProduct.genres.includes(genre)
+  );
+
+  score += sameActresses.length * 10;
+  score += sameGenres.length * 3;
+
+  if (
+    product.maker &&
+    product.maker === sourceProduct.maker
+  ) {
+    score += 2;
+  }
+
+  return score;
+}
+
+function renderRelatedProducts() {
+  let section =
+    document.getElementById("relatedSection");
+
+  if (!relatedSourceProduct) {
+    if (section) {
+      section.style.display = "none";
+    }
+
+    return;
+  }
+
+  const productMap = new Map();
+
+  [
+    ...products,
+    ...recommendationProducts,
+    ...saleProducts,
+  ].forEach((product) => {
+    if (
+      product?.id &&
+      product.id !== relatedSourceProduct.id
+    ) {
+      productMap.set(product.id, product);
+    }
+  });
+
+  const relatedProducts = [
+    ...productMap.values(),
+  ]
+    .map((product) => ({
+      product,
+      score: getRelatedScore(
+        product,
+        relatedSourceProduct
+      ),
+    }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 6)
+    .map((item) => item.product);
+
+  if (!relatedProducts.length) {
+    if (section) {
+      section.style.display = "none";
+    }
+
+    return;
+  }
+
+  if (!section) {
+    section = document.createElement("section");
+    section.id = "relatedSection";
+
+    const saleSection =
+      document.getElementById("saleSection");
+
+    if (saleSection) {
+      saleSection.after(section);
+    } else {
+      results.before(section);
+    }
+  }
+
+  section.style.display = "block";
+
+  section.innerHTML = `
+    <div class="recommend-heading">
+      <h2>🔍 この作品に近いおすすめ</h2>
+      <p style="
+        margin:6px 0 20px;
+        color:#666;
+        font-size:14px;
+      ">
+        「${relatedSourceProduct.title}」に近い作品
+      </p>
+    </div>
+
+    <div
+      id="relatedResults"
+      class="results"
+    ></div>
+  `;
+
+  const area =
+    document.getElementById("relatedResults");
+
+  relatedProducts.forEach((product) => {
+    const node =
+      template.content.cloneNode(true);
+
+    node.querySelector(".badge").textContent =
+      "関連作品";
+
+    node.querySelector("h3").textContent =
+      product.title;
+
+    setActressLinks(
+      product,
+      node.querySelector(".description")
+    );
+
+    setProductImage(
+      product,
+      node.querySelector(".placeholder")
+    );
+
+    node.querySelector(".price").textContent =
+      product.price > 0
+        ? `¥${product.price.toLocaleString()}〜`
+        : "価格はFANZAで確認";
+
+    const favoriteButton =
+      node.querySelector(".favorite");
+
+    const isFavorite =
+      favorites.includes(product.id);
+
+    favoriteButton.classList.toggle(
+      "active",
+      isFavorite
+    );
+
+    favoriteButton.textContent =
+      isFavorite ? "♥" : "♡";
+
+    favoriteButton.addEventListener(
+      "click",
+      () => {
+        toggleFavorite(product);
+        renderRelatedProducts();
+      }
+    );
+
+    const link =
+      node.querySelector(".detail-link");
+
+    link.href = product.url;
+    link.target = "_blank";
+    link.rel =
+      "noopener noreferrer sponsored";
+
+    link.addEventListener("click", () => {
+      saveRelatedSource(product);
+    });
+
+    area.appendChild(node);
+  });
+}
+
 function render() {
   const genre =
     $("genreFilter").value;
@@ -1311,6 +1501,7 @@ let filtered = showHistoryOnly
       "noopener noreferrer sponsored";
   
     detailLink.addEventListener("click", () => {
+  saveRelatedSource(product);
      const history = JSON.parse(
   localStorage.getItem("viewHistory") || "[]"
 );
