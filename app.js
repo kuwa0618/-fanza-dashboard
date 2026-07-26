@@ -20,6 +20,7 @@ const $ = (id) => document.getElementById(id);
 const results = $("results");
 const template = $("cardTemplate");
 const autocompleteList = $("autocompleteList");
+let autocompleteIndex = -1;
 function asArray(value) {
   if (Array.isArray(value)) return value;
   if (value == null) return [];
@@ -1659,6 +1660,26 @@ $("searchBtn").addEventListener(
 $("keyword").addEventListener(
   "keydown",
   (event) => {
+ const items = autocompleteList.querySelectorAll(".autocomplete-item");
+
+if (event.key === "ArrowDown") {
+  event.preventDefault();
+
+  autocompleteIndex = Math.min(
+    autocompleteIndex + 1,
+    items.length - 1
+  );
+}
+
+ if (event.key === "ArrowUp") {
+  event.preventDefault();
+
+  autocompleteIndex = Math.max(
+    autocompleteIndex - 1,
+    0
+  );
+}
+    
     if (event.key === "Enter") {
       const url =
         new URL(
