@@ -1807,8 +1807,7 @@ $("keyword").addEventListener("input", () => {
     }
   }, 300);
 });
-  }
-);
+ 
 document.addEventListener("click", (event) => {
   if (!autocompleteList.contains(event.target) && event.target !== $("keyword")) {
     autocompleteList.innerHTML = "";
