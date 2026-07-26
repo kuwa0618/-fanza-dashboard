@@ -1793,7 +1793,8 @@ $("keyword").addEventListener("input", () => {
           autocompleteList.innerHTML = "";
           autocompleteList.style.display = "none";
 
-          openActressPage(actress);
+         applyActressPageState(actress, true);
+　　　　　fetchProducts(false);
         });
 
         item.addEventListener("mouseenter", () => {
