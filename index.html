@@ -131,9 +131,17 @@
 </div>
       <label for="keyword">キーワード</label>
       <div class="search-row">
-        <input id="keyword" placeholder="出演者・メーカー・ジャンルなど">
+       <input
+  id="keyword"
+  placeholder="出演者・メーカー・ジャンルなど"
+  autocomplete="off"
+>
         <button id="searchBtn" class="primary">検索</button>
       </div>
+    <div
+  id="autocompleteList"
+  class="autocomplete-list hidden"
+></div>
 <div class="popular-keywords">
   <span class="popular-keywords-label">
     🔥 注目キーワード
