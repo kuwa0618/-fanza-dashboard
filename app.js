@@ -1683,7 +1683,10 @@ $("keyword").addEventListener(
 const keyword = $("keyword").value.trim();
 if (!keyword) return;   
 
- autocompleteList.innerHTML = "";   
+ autocompleteList.innerHTML = "";  
+  const matchedProducts = products.filter((product) =>
+  product.title.toLowerCase().includes(keyword.toLowerCase())
+);  
   }
 );
 [
