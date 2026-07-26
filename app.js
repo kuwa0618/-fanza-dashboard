@@ -474,6 +474,9 @@ if (scrollToTop) {
     behavior: "smooth",
   });
 }
+}
+
+document
 
 document
   .querySelectorAll("[data-popular-keyword]")
