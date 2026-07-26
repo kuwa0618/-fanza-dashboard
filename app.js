@@ -1708,7 +1708,8 @@ matchedProducts.slice(0, 5).forEach((product) => {
   
   autocompleteList.appendChild(item);
   autocompleteList.style.display = "block";
-
+　autocompleteList.classList.remove("hidden");
+  
  item.addEventListener("mouseenter", () => {
   item.classList.add("active");
 });
