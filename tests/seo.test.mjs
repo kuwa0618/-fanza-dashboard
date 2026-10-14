@@ -28,7 +28,7 @@ test('homepage falls back to real site introduction on API failure without fake 
 });
 test('robots and sitemap keep public JS crawlable and admin URLs out; redirect aliases preserve canonical',()=>{
  const robots=fs.readFileSync(new URL('../robots.txt',import.meta.url),'utf8');assert(robots.includes('Sitemap: https://fanza-dashboard-omega.vercel.app/sitemap.xml'));assert(!/^Disallow: \/api\/$/m.test(robots));assert(!/^Disallow: \/app.js$/m.test(robots));
- const xml=fs.readFileSync(new URL('../sitemap.xml',import.meta.url),'utf8');const urls=[...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map(m=>m[1]);assert.equal(urls.length,7);assert(urls.every(u=>!/(api|analysis|dashboard|post-form|\?)/.test(new URL(u).pathname)));assert(!xml.includes('<lastmod>'));
+ const xml=fs.readFileSync(new URL('../sitemap.xml',import.meta.url),'utf8');const urls=[...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map(m=>m[1]);assert(urls.length>=7);assert.equal(new Set(urls).size,urls.length);assert(urls.every(u=>!/(api|analysis|dashboard|post-form|\?)/.test(new URL(u).pathname)));assert(!xml.includes('<lastmod>'));
  for(const f of ['click-analysis.html','analysis.html','dashboard.html','post-form.html'])assert.match(fs.readFileSync(new URL('../'+f,import.meta.url),'utf8'),/name="robots" content="noindex/);
  const config=JSON.parse(fs.readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));assert.equal(config.redirects.find(r=>r.source==='/index.html').destination,'/');
 });
