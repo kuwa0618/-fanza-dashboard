@@ -17,12 +17,6 @@
       "permanent": true
     }
   ],
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "/api/search?view=page"
-    }
-  ],
   "headers": [
     {
       "source": "/docs/:path*",
