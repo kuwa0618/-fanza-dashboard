@@ -486,3 +486,38 @@
 .autocomplete-item.active {
   background: #f1f3f5;
 }
+
+/* Normal-flow shortcuts stay below the age gate and fit narrow phones. */
+.site-header > div { min-width: 0; max-width: 100%; }
+.header-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.top-quick-nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  max-width: 460px;
+  margin-top: 16px;
+}
+.quick-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 12px;
+  border: 1px solid #17191c;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.quick-link-search { background: #17191c; color: #fff; }
+.quick-link-sale { background: #fff; color: #a31332; border-color: #a31332; }
+.quick-link:focus-visible { outline: 3px solid #2463c7; outline-offset: 3px; }
+#searchPanel, #saleBrowse { scroll-margin-top: 16px; }
+#saleNavigationStatus:empty { display: none; }
+@media (max-width: 360px) {
+  .top-quick-nav { grid-template-columns: minmax(0, 1fr); }
+}
