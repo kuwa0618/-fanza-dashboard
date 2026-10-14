@@ -4,6 +4,9 @@ import { adminHeaders, isAdminAuthorized } from "./lib/admin-auth.js";
 export const config = {
   matcher: [
     "/",
+    "/sale",
+    "/vr",
+    "/new",
     "/click-analysis.html",
     "/click-analysis.html/:path*",
     "/click-analysis/:path*",
@@ -25,6 +28,14 @@ export default function middleware(request: Request) {
   if (url.pathname === "/") {
     url.pathname = "/api/search";
     url.searchParams.set("view", "page");
+    return rewrite(url);
+  }
+  const category = ({ "/sale": "sale", "/vr": "vr", "/new": "new" } as Record<string, string>)[url.pathname];
+  if (category) {
+    url.pathname = "/api/search";
+    url.search = "";
+    url.searchParams.set("view", "catalog");
+    url.searchParams.set("category", category);
     return rewrite(url);
   }
   const headers = { ...adminHeaders };
