@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+# Authenticated administration pages also send HTTP X-Robots-Tag: noindex.
+Disallow: /click-analysis
+Disallow: /analysis
+Disallow: /dashboard
+Disallow: /post-form
+Disallow: /api/post
+Disallow: /api/posts
+Disallow: /api/insights
+Disallow: /api/stats
+# Public search/ranking APIs and assets stay crawlable for JavaScript rendering.
+Disallow: /docs/
+Disallow: /tests/
+Disallow: /lib/
+Disallow: /supabase/
+Sitemap: https://fanza-dashboard-omega.vercel.app/sitemap.xml

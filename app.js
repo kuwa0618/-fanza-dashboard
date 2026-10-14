@@ -445,10 +445,10 @@ function setPageHeading(text) {
 }
 
 function setDefaultPageState() {
-  document.title = "FANZA作品ナビ";
+  document.title = "FANZA作品ナビ｜セール・人気作品を出演者やジャンルから検索";
 
   setPageHeading(
-    "今日は何を見る？30秒で見つけよう。"
+    "FANZA作品ナビ｜セール・人気作品を探す"
   );
 }
 
@@ -474,7 +474,7 @@ function applyActressPageState(
     }
 
     document.title =
-      `${actress}の作品一覧 | FANZA作品発見サイト`;
+      `${actress}の作品一覧 | FANZA作品ナビ`;
 
     setPageHeading(
       `${actress}の作品を見つける`
@@ -729,6 +729,7 @@ localStorage.setItem(
 
     updateFilters();
     render();
+    $("initialCatalog")?.remove();
 
     updateLoadMoreButton(
       newProducts.length === 20 &&

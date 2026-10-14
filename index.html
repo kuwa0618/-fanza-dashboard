@@ -12,41 +12,47 @@
 </script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
- <title>FANZA作品ナビ</title>
-  <meta name="description" content="女優・ジャンル・メーカーから、あなた好みのFANZA作品を探せる検索サイト。おすすめ作品や人気ランキングも掲載。">
-  <meta name="keywords" content="FANZA,AV,女優,作品検索,AV検索,おすすめAV,人気AV,VR,FANZA作品">
-  <meta property="og:title" content="FANZA作品ナビ">
-<meta property="og:description" content="女優・ジャンル・メーカーから、あなた好みのFANZA作品を探せる検索サイト。">
+ <title>FANZA作品ナビ｜セール・人気作品を出演者やジャンルから検索</title>
+  <meta name="description" content="FANZAの作品を出演者・メーカー・ジャンルで検索。セール作品、人気ランキング、実レビューによる高評価作品を探せます。お気に入りと閲覧履歴で気になる作品を保存。18歳以上向け。">
+
+  <meta property="og:title" content="FANZA作品ナビ｜セール・人気作品を出演者やジャンルから検索">
+<meta property="og:description" content="FANZAの作品を出演者・メーカー・ジャンルで検索。セール作品、人気ランキング、実レビューによる高評価作品を探せます。お気に入りと閲覧履歴で気になる作品を保存。18歳以上向け。">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://fanza-dashboard-omega.vercel.app/ogp-v2.png">
 <meta property="og:url" content="https://fanza-dashboard-omega.vercel.app/">
 <meta property="og:site_name" content="FANZA作品ナビ">
 
  <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="FANZA作品ナビ">
-<meta name="twitter:description" content="女優・ジャンル・メーカーから、あなた好みのFANZA作品を探せる検索サイト。">
+<meta name="twitter:title" content="FANZA作品ナビ｜セール・人気作品を出演者やジャンルから検索">
+<meta name="twitter:description" content="FANZAの作品を出演者・メーカー・ジャンルで検索。セール作品、人気ランキング、実レビューによる高評価作品を探せます。お気に入りと閲覧履歴で気になる作品を保存。18歳以上向け。">
 <meta name="twitter:image" content="https://fanza-dashboard-omega.vercel.app/ogp-v2.png">
   
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="rankings.css">
+<link rel="canonical" href="https://fanza-dashboard-omega.vercel.app/">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="rating" content="adult">
+<meta property="og:locale" content="ja_JP">
+<script id="siteStructuredData" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://fanza-dashboard-omega.vercel.app/#website","url":"https://fanza-dashboard-omega.vercel.app/","name":"FANZA作品ナビ","inLanguage":"ja","isFamilyFriendly":false},{"@type":"CollectionPage","@id":"https://fanza-dashboard-omega.vercel.app/#webpage","url":"https://fanza-dashboard-omega.vercel.app/","name":"FANZA作品ナビ｜セール・人気作品を出演者やジャンルから検索","description":"FANZAの作品を出演者・メーカー・ジャンルで検索。セール作品、人気ランキング、実レビューによる高評価作品を探せます。お気に入りと閲覧履歴で気になる作品を保存。18歳以上向け。","inLanguage":"ja","isFamilyFriendly":false,"isPartOf":{"@id":"https://fanza-dashboard-omega.vercel.app/#website"}}]}</script>
 </head>
   <body>
   <div id="ageGate" class="age-gate">
     <div class="age-card">
       <p class="eyebrow">年齢確認</p>
-      <h1>18歳以上ですか？</h1>
-      <p>この試作版は成人向け作品を扱うサイトを想定しています。</p>
+      <h2>18歳以上ですか？</h2>
+      <p>当サイトは成人向け作品を紹介しています。18歳未満の方は利用できません。</p>
       <button id="enterBtn" class="primary">18歳以上です</button>
       <button id="leaveBtn" class="secondary">退出する</button>
     </div>
   </div>
 
+  <main id="mainContent">
   <header class="site-header">
   <div>
     <p class="eyebrow">FANZA作品ナビ</p>
-    <h1>今日は何を見る？30秒で見つけよう。</h1>
+    <h1>FANZA作品ナビ｜セール・人気作品を探す</h1>
     <p class="header-description">
-      気分や好みに合わせて、あなたにぴったりの作品探しをお手伝いします。
+      出演者・メーカー・ジャンルから作品を検索。セール情報、人気ランキング、高評価作品をまとめて探せます。
     </p>
     <nav id="topQuickNav" class="top-quick-nav" aria-label="作品へのショートカット" inert>
       <a class="quick-link quick-link-search" href="#searchPanel">作品を探す</a>
@@ -80,8 +86,8 @@
       ランキングを読み込んでいます...
     </p>
   </div>
-    
- <main>
+ </section>
+ <div class="browse-content">
   <section class="mood-panel">
     <div class="mood-heading">
       <p class="eyebrow">気分から選ぶ</p>
@@ -121,7 +127,8 @@
     </div>
   </section>
 
-  <section id="searchPanel" class="search-panel" tabindex="-1" aria-label="作品を探す">
+  <section id="searchPanel" class="search-panel" tabindex="-1" aria-labelledby="searchHeading">
+    <h2 id="searchHeading">作品を探す</h2>
     <div id="activeMood" class="active-mood hidden">
   <span id="activeMoodText"></span>
 
@@ -207,7 +214,7 @@
     <section class="result-header">
       <div>
         <p class="eyebrow">検索結果</p>
-        <h2><span id="resultCount">0</span>件</h2>
+        <h2>検索結果 <span id="resultCount">0</span>件</h2>
       </div>
       <button id="resetBtn" class="secondary">条件をリセット</button>
     </section>
@@ -215,11 +222,13 @@
     <section id="saleBrowse" class="sale-browse" tabindex="-1" aria-label="セール作品">
       <p id="saleNavigationStatus" role="status">セール作品を読み込んでいます…</p>
     </section>
+    <!-- SERVER_CATALOG -->
+    <noscript><p>検索・並び替え・お気に入りの操作と年齢確認にはJavaScriptを有効にしてください。掲載作品のテキストは初期HTMLでも取得できます。</p></noscript>
     <section id="results" class="cards"></section>
     
 
 
-</main>                                      
+</div>
   
 
   <template id="cardTemplate">
@@ -710,6 +719,7 @@ document.addEventListener("click", trackRankingActivation);
 document.addEventListener("auxclick", trackRankingActivation);
 </script>
   <script src="app.js"></script>
+  </main>
   <footer class="site-footer">
   <p class="affiliate-notice">
     当サイトはDMM・FANZA等のアフィリエイト広告を利用しています。
@@ -722,7 +732,7 @@ document.addEventListener("auxclick", trackRankingActivation);
   </nav>
 
   <p class="copyright">
-    © 2026 FANZA作品発見サイト
+    © 2026 FANZA作品ナビ
   </p>
 </footer>
 </body>

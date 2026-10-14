@@ -1,4 +1,36 @@
+import { readFile } from "node:fs/promises";
+import { renderSeoPage, escapeHtml } from "../lib/seo.js";
+
+async function homepage(req, res) {
+  let items = [];
+  if (process.env.DMM_API_ID && process.env.DMM_AFFILIATE_ID) {
+    try {
+      const params = new URLSearchParams({ api_id: process.env.DMM_API_ID, affiliate_id: process.env.DMM_AFFILIATE_ID,
+        site: "FANZA", service: "digital", floor: "videoa", hits: "20", offset: "1", sort: "date", output: "json",
+        lte_date: new Date().toLocaleString("sv-SE", { timeZone: "Asia/Tokyo" }).replace(" ", "T") });
+      const response = await fetch(`https://api.dmm.com/affiliate/v3/ItemList?${params}`, { signal: AbortSignal.timeout(5000) });
+      const data = await response.json();
+      if (response.ok && data?.result?.status === 200 && Array.isArray(data.result.items)) items = data.result.items;
+    } catch { console.error("Homepage catalog temporarily unavailable"); }
+  }
+  try {
+    const template = await readFile(new URL("../index.html", import.meta.url), "utf8");
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.setHeader("Cache-Control", items.length ? "public, max-age=0, s-maxage=300, stale-while-revalidate=600" : "public, max-age=0, s-maxage=30");
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Link", '<https://fanza-dashboard-omega.vercel.app/>; rel="canonical"');
+    let html = renderSeoPage(template, items);
+    const verification = process.env.GOOGLE_SITE_VERIFICATION;
+    if (verification) html = html.replace("</head>", `<meta name="google-site-verification" content="${escapeHtml(verification)}">\n</head>`);
+    return res.status(200).send(html);
+  } catch {
+    return res.status(503).send("ページを読み込めませんでした。時間をおいて再度お試しください。");
+  }
+}
+
 export default async function handler(req, res) {
+  if (req.query.view === "page" && req.method === "GET") return homepage(req, res);
+  res.setHeader?.("X-Robots-Tag", "noindex, follow");
   if (req.method !== "GET") {
     return res.status(405).json({
       success: false,
@@ -81,7 +113,7 @@ if (mode === "sale") {
         error:
           data?.result?.message ||
           "DMM商品情報APIから正常な応答を取得できませんでした。",
-        details: data?.result || null,
+
       });
     }
 
