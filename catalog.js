@@ -11,7 +11,7 @@
   document.getElementById('leaveBtn').addEventListener('click', () => { location.href = 'https://www.google.com/'; });
   try { if (localStorage.getItem('ageConfirmed') === '1') enter(); } catch {}
   const products = JSON.parse(document.getElementById('catalogProducts').textContent);
-  const sources = {sale:'sale_page', vr:'vr_page', new:'new_page'};
+  const sources = {product:'product_page', sale:'sale_page', vr:'vr_page', new:'new_page'};
   // A failed cover must not remove the card's title, prices or FANZA button.
   for (const image of document.querySelectorAll('.catalog-image')) {
     const hideUnavailable = () => { image.parentElement.hidden = true; };
