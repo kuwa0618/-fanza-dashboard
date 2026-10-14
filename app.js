@@ -40,6 +40,18 @@ function trackFanzaClick(product, source = "ranking", linkType = "button") {
   }
 }
 
+// Internal detail navigation never records a FANZA outbound click.
+function setProductTitle(node, product) {
+  const title = node.querySelector("h3");
+  title.textContent = product.title;
+  if (/^[a-zA-Z0-9_]{3,80}$/.test(product.id || "")) {
+    const link = document.createElement("a");
+    link.href = `/product/${encodeURIComponent(product.id)}`;
+    link.textContent = product.title;
+    title.replaceChildren(link);
+  }
+}
+
 function bindFanzaProductLink(link, product, source, linkType = "button") {
   link.href = product.url;
   link.target = "_blank";
@@ -868,8 +880,7 @@ function renderRecommendations() {
     node.querySelector(".badge").textContent =
       "おすすめ";
 
-    node.querySelector("h3").textContent =
-      product.title;
+    setProductTitle(node, product);
 
     setActressLinks(
       product,
@@ -1067,8 +1078,7 @@ function renderSaleProducts(saleProducts) {
       boxShadow: "0 3px 10px rgba(230, 0, 35, 0.25)",
     });
     
-    node.querySelector("h3").textContent =
-      product.title;
+    setProductTitle(node, product);
 
     setActressLinks(
       product,
@@ -1281,8 +1291,7 @@ function renderRelatedProducts() {
     node.querySelector(".badge").textContent =
       "関連作品";
 
-    node.querySelector("h3").textContent =
-      product.title;
+    setProductTitle(node, product);
 
     setActressLinks(
       product,
@@ -1418,9 +1427,7 @@ let filtered = showHistoryOnly
       );
     }
 
-    node.querySelector(
-      "h3"
-    ).textContent = product.title;
+    setProductTitle(node, product);
 
     setActressLinks(
       product,
