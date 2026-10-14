@@ -30,5 +30,15 @@ test('robots and sitemap keep public JS crawlable and admin URLs out; redirect a
  const robots=fs.readFileSync(new URL('../robots.txt',import.meta.url),'utf8');assert(robots.includes('Sitemap: https://fanza-dashboard-omega.vercel.app/sitemap.xml'));assert(!/^Disallow: \/api\/$/m.test(robots));assert(!/^Disallow: \/app.js$/m.test(robots));
  const xml=fs.readFileSync(new URL('../sitemap.xml',import.meta.url),'utf8');const urls=[...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map(m=>m[1]);assert.equal(urls.length,4);assert(urls.every(u=>!/(api|analysis|dashboard|post-form|\?)/.test(new URL(u).pathname)));assert(!xml.includes('<lastmod>'));
  for(const f of ['click-analysis.html','analysis.html','dashboard.html','post-form.html'])assert.match(fs.readFileSync(new URL('../'+f,import.meta.url),'utf8'),/name="robots" content="noindex/);
- const config=JSON.parse(fs.readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));assert.equal(config.rewrites[0].destination,'/api/search?view=page');assert.equal(config.redirects.find(r=>r.source==='/index.html').destination,'/');
+ const config=JSON.parse(fs.readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));assert.equal(config.redirects.find(r=>r.source==='/index.html').destination,'/');
+});
+
+test('root middleware rewrites before static files without authentication and preserves actress query',async()=>{
+ const {default:ts}=await import('typescript');const vm=await import('node:vm');
+ const source=fs.readFileSync(new URL('../middleware.ts',import.meta.url),'utf8');
+ const compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+ const exports={};vm.runInNewContext(compiled,{exports,process,Response,URL,require:name=>name==='@vercel/functions'?{rewrite:url=>new Response(null,{headers:{'x-middleware-rewrite':String(url)}})}:{}});
+ delete process.env.ADMIN_USER;delete process.env.ADMIN_PASSWORD;
+ const r=exports.default(new Request('https://example.com/?actress=sample&view=ignored'));const target=new URL(r.headers.get('x-middleware-rewrite'));
+ assert.equal(r.status,200);assert.equal(target.pathname,'/api/search');assert.equal(target.searchParams.get('view'),'page');assert.equal(target.searchParams.get('actress'),'sample');assert(!r.headers.get('x-robots-tag'));
 });
