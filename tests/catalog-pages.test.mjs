@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import search from '../api/search.js';
-import {catalogPages,catalogParams,selectCatalog,discountedPrice,renderCatalogPage,affiliateUrl} from '../lib/catalog-pages.js';
+import {catalogPages,catalogParams,selectCatalog,discountedPrice,renderCatalogPage,affiliateUrl,productImages} from '../lib/catalog-pages.js';
 import {normalizeSource} from '../lib/click-analytics.js';
 const now=new Date('2026-10-15T00:00:00+09:00');
 const work=(id='real',extra={})=>({content_id:id,title:'API確認作品 <script>alert(1)</script>',date:'2026-10-14 10:00:00',affiliateURL:'https://al.dmm.co.jp/?lurl=https%3A%2F%2Fwww.dmm.co.jp%2F',iteminfo:{genre:[{name:'VR専用'}],actress:[{name:'出演者'}],maker:[{name:'メーカー'}]},prices:{deliveries:{delivery:[{type:'hd',price:'500',list_price:'1000'}]}},...extra});
@@ -37,7 +37,7 @@ test('catalog links record once, preserve navigation and history even when stora
  for(const key of Object.keys(catalogPages)){
   const listeners={},calls=[],stored={};const nodes={mainContent:{inert:true},ageGate:{classList:{add(){}}},enterBtn:{addEventListener(t,fn){listeners.enter=fn}},leaveBtn:{addEventListener(){}},catalogProducts:{textContent:JSON.stringify([{id:'real',title:'API確認作品',url:'https://al.dmm.co.jp/',actresses:[],genres:[],maker:'メーカー'}])}};
   const link={dataset:{product:'0'},addEventListener(t,fn){listeners[t]=fn}};
-  const ctx={document:{getElementById:id=>nodes[id],querySelectorAll:()=>[link],body:{dataset:{catalog:key}}},window:{},location:{},localStorage:{getItem:k=>stored[k]||null,setItem:(k,v)=>stored[k]=v},fetch:(url,opts)=>{calls.push(JSON.parse(opts.body));return Promise.resolve({ok:true})}};
+  const ctx={document:{getElementById:id=>nodes[id],querySelectorAll:selector=>selector==='[data-product]'?[link]:[],body:{dataset:{catalog:key}}},window:{},location:{},localStorage:{getItem:k=>stored[k]||null,setItem:(k,v)=>stored[k]=v},fetch:(url,opts)=>{calls.push(JSON.parse(opts.body));return Promise.resolve({ok:true})}};
   vm.runInNewContext(fs.readFileSync(new URL('../catalog.js',import.meta.url),'utf8'),ctx);listeners.click({type:'click'});assert.equal(calls.length,0);listeners.enter();listeners.click({type:'click'});assert.equal(calls.length,1);assert.equal(normalizeSource(calls[0].link_source),key+'_page');assert.equal(JSON.parse(stored.viewHistory)[0].id,'real');listeners.auxclick({type:'auxclick',button:2});assert.equal(calls.length,1);ctx.localStorage.setItem=()=>{throw Error('private mode')};listeners.auxclick({type:'auxclick',button:1});assert.equal(calls.length,2);
  }
 });
@@ -50,5 +50,43 @@ test('all category routes stay public and ignore caller supplied API modes',asyn
  for(const key of ['sale','vr','new']){
   assert(exports.config.matcher.includes('/'+key));const r=exports.default(new Request('https://example.com/'+key+'?view=page&category=ignored&keyword=wrong'));
   const target=new URL(r.headers.get('x-middleware-rewrite'));assert.equal(r.status,200);assert.equal(target.pathname,'/api/search');assert.equal(target.searchParams.get('view'),'catalog');assert.equal(target.searchParams.get('category'),key);assert.equal(target.searchParams.size,2);
+ }
+});
+
+
+test('API covers appear above titles with safe image and affiliate URLs; missing images preserve cards',()=>{
+ const cover='https://pics.dmm.co.jp/digital/video/real/realpl.jpg';
+ assert.deepEqual(productImages({imageURL:{large:cover,list:cover,small:'https://pics.dmm.co.jp/realps.jpg'}}),[cover,'https://pics.dmm.co.jp/realps.jpg']);
+ assert.deepEqual(productImages({imageURL:{large:'javascript:alert(1)',list:'https://pics.dmm.co.jp.evil.test/image'}}),[]);
+ assert.deepEqual(productImages({imageURL:{large:42,small:cover}}),[cover]);
+ for(const key of Object.keys(catalogPages)){
+  const html=renderCatalogPage(key,[work('real',{imageURL:{large:cover}})]);
+  const card=html.slice(html.indexOf('<ul class="catalog-list">'));
+  assert(card.indexOf('<img ')<card.indexOf('<h3>'));assert(card.includes('src="'+cover+'"'));assert(card.includes('data-link-type="image"'));assert(card.includes('data-link-type="button"'));assert.match(card,/<a class="catalog-image-link"[^>]*href="https:\/\/al.dmm.co.jp/);assert(!card.includes('<script>alert'));
+  for(const imageURL of [undefined,{}, {large:'javascript:alert(1)'}]){
+   const missing=renderCatalogPage(key,[work('no-cover',{imageURL})]);assert(!missing.includes('<img '));assert(missing.includes('<h3>'));assert(missing.includes('data-link-type="button"'));assert.equal(missing.includes('500円'),key==='sale');
+  }
+ }
+});
+
+test('image and button activations each record exactly once to API and GA4, including keyboard and middle-click',()=>{
+ for(const key of Object.keys(catalogPages))for(const type of ['image','button']){
+  const handlers={},calls=[],ga=[];const nodes={mainContent:{inert:false},ageGate:{classList:{add(){}}},enterBtn:{addEventListener(){}},leaveBtn:{addEventListener(){}},catalogProducts:{textContent:JSON.stringify([{id:'real',title:'作品',url:'https://al.dmm.co.jp/',actresses:[],genres:[],maker:''}])}};
+  const link={dataset:{product:'0',linkType:type},addEventListener:(name,fn)=>handlers[name]=fn};
+  const ctx={document:{getElementById:id=>nodes[id],querySelectorAll:selector=>selector==='[data-product]'?[link]:[],body:{dataset:{catalog:key}}},window:{gtag:(...args)=>ga.push(args)},localStorage:{getItem:()=>null,setItem(){}},fetch:(url,opts)=>{assert.equal(url,'/api/click');assert.equal(opts.keepalive,true);calls.push(JSON.parse(opts.body));return Promise.resolve({ok:true})}};
+  vm.runInNewContext(fs.readFileSync(new URL('../catalog.js',import.meta.url),'utf8'),ctx);
+  for(const event of [{type:'click',button:0},{type:'click',button:0,detail:0},{type:'click',button:0,ctrlKey:true},{type:'auxclick',button:1}]){
+   const before=calls.length;handlers[event.type](event);assert.equal(calls.length,before+1);assert.equal(ga.length,calls.length);assert.equal(calls.at(-1).link_type,type);assert.equal(calls.at(-1).link_source,key+'_page');assert.equal(ga.at(-1)[0],'event');assert.equal(ga.at(-1)[1],'fanza_click');assert.equal(ga.at(-1)[2].link_type,type);
+  }
+  handlers.auxclick({type:'auxclick',button:2});assert.equal(calls.length,4);assert.equal(ga.length,4);
+ }
+});
+
+test('cached or later image failures only hide the cover, leaving all text and buttons intact',()=>{
+ for(const cached of [false,true]){
+  let errorHandler;const wrapper={hidden:false};const image={complete:cached,naturalWidth:0,parentElement:wrapper,addEventListener:(type,fn)=>{assert.equal(type,'error');errorHandler=fn;}};
+  const nodes={mainContent:{inert:true},ageGate:{classList:{add(){}}},enterBtn:{addEventListener(){}},leaveBtn:{addEventListener(){}},catalogProducts:{textContent:'[]'}};
+  vm.runInNewContext(fs.readFileSync(new URL('../catalog.js',import.meta.url),'utf8'),{document:{getElementById:id=>nodes[id],querySelectorAll:selector=>selector==='.catalog-image'?[image]:[],body:{dataset:{catalog:'sale'}}},localStorage:{getItem:()=>null}});
+  assert.equal(wrapper.hidden,cached);errorHandler();assert.equal(wrapper.hidden,true);assert.equal(nodes.mainContent.inert,true);
  }
 });
