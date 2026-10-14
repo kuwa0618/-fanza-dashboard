@@ -14,7 +14,7 @@ async function homepage(req, res) {
     } catch { console.error("Homepage catalog temporarily unavailable"); }
   }
   try {
-    const template = await readFile(new URL("../index.html", import.meta.url), "utf8");
+    const template = await readFile(`${process.cwd()}/index.html`, "utf8");
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.setHeader("Cache-Control", items.length ? "public, max-age=0, s-maxage=300, stale-while-revalidate=600" : "public, max-age=0, s-maxage=30");
     res.setHeader("X-Content-Type-Options", "nosniff");
@@ -29,7 +29,7 @@ async function homepage(req, res) {
 }
 
 export default async function handler(req, res) {
-  if (req.query.view === "page" && req.method === "GET") return homepage(req, res);
+  if (req.query.view === "page" && ["GET", "HEAD"].includes(req.method)) return homepage(req, res);
   res.setHeader?.("X-Robots-Tag", "noindex, follow");
   if (req.method !== "GET") {
     return res.status(405).json({
