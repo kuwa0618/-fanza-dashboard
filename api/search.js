@@ -1,6 +1,29 @@
 import { readFile } from "node:fs/promises";
 import { renderSeoPage, escapeHtml } from "../lib/seo.js";
 
+import { catalogPages, catalogParams, selectCatalog, renderCatalogPage } from "../lib/catalog-pages.js";
+
+async function catalogPage(req, res, key) {
+  let items = [], unavailable = false;
+  try {
+    if (!process.env.DMM_API_ID || !process.env.DMM_AFFILIATE_ID) throw new Error("Missing catalog configuration");
+    const params = catalogParams(key);
+    params.set("api_id", process.env.DMM_API_ID);
+    params.set("affiliate_id", process.env.DMM_AFFILIATE_ID);
+    const response = await fetch(`https://api.dmm.com/affiliate/v3/ItemList?${params}`, {signal:AbortSignal.timeout(5000)});
+    const data = await response.json();
+    if (!response.ok || data?.result?.status !== 200 || !Array.isArray(data.result.items)) throw new Error("Catalog unavailable");
+    items = selectCatalog(key, data.result.items);
+  } catch { unavailable = true; console.error("Public catalog temporarily unavailable"); }
+  const canonical = `https://fanza-dashboard-omega.vercel.app${catalogPages[key].path}`;
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("Cache-Control", unavailable ? "no-store" : "public, max-age=0, s-maxage=300, stale-while-revalidate=600");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Link", `<${canonical}>; rel="canonical"`);
+  if (unavailable) { res.setHeader("Retry-After", "60"); res.setHeader("X-Robots-Tag", "noindex, follow"); }
+  return res.status(unavailable ? 503 : 200).send(renderCatalogPage(key, items, {unavailable}));
+}
+
 async function homepage(req, res) {
   let items = [];
   if (process.env.DMM_API_ID && process.env.DMM_AFFILIATE_ID) {
@@ -29,6 +52,11 @@ async function homepage(req, res) {
 }
 
 export default async function handler(req, res) {
+  if (req.query.view === "catalog" && ["GET", "HEAD"].includes(req.method)) {
+    const key = req.query.category;
+    if (typeof key !== "string" || !Object.hasOwn(catalogPages, key)) return res.status(404).send("ページが見つかりません。");
+    return catalogPage(req, res, key);
+  }
   if (req.query.view === "page" && ["GET", "HEAD"].includes(req.method)) return homepage(req, res);
   res.setHeader?.("X-Robots-Tag", "noindex, follow");
   if (req.method !== "GET") {
