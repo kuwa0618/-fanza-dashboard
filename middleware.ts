@@ -1,7 +1,15 @@
 import { next } from "@vercel/functions";
+import { adminHeaders, isAdminAuthorized } from "./lib/admin-auth.js";
 
 export const config = {
   matcher: [
+    "/click-analysis.html",
+    "/click-analysis.html/:path*",
+    "/click-analysis/:path*",
+    "/api/click-analysis/:path*",
+    "/analysis",
+    "/post-form",
+    "/dashboard",
     "/analysis.html",
     "/post-form.html",
     "/dashboard.html",
@@ -13,42 +21,15 @@ export const config = {
 };
 
 export default function middleware(request: Request) {
-  const adminUser = process.env.ADMIN_USER;
-  const adminPassword = process.env.ADMIN_PASSWORD;
-
-  if (!adminUser || !adminPassword) {
-    return new Response("管理用の認証設定がありません。", {
-      status: 500,
-    });
+  const headers = { ...adminHeaders };
+  if (!process.env.ADMIN_USER || !process.env.ADMIN_PASSWORD) {
+    return new Response("管理用の認証設定がありません。", { status: 503, headers });
   }
-
-  const authorization = request.headers.get("authorization");
-
-  if (authorization?.startsWith("Basic ")) {
-    try {
-      const decoded = atob(authorization.slice(6));
-      const separator = decoded.indexOf(":");
-
-      const username = decoded.slice(0, separator);
-      const password = decoded.slice(separator + 1);
-
-      if (
-        username === adminUser &&
-        password === adminPassword
-      ) {
-        return next();
-      }
-    } catch {
-      // 認証に失敗した場合は下の401を返す
-    }
+  if (isAdminAuthorized(request.headers.get("authorization"))) {
+    return next({ headers });
   }
-
-  return new Response("ユーザー名とパスワードを入力してください。", {
+  return new Response("管理者のユーザー名とパスワードを入力してください。", {
     status: 401,
-    headers: {
-      "WWW-Authenticate":
-        'Basic realm="FANZA Admin", charset="UTF-8"',
-      "Cache-Control": "no-store",
-    },
+    headers: { ...headers, "WWW-Authenticate": 'Basic realm="FANZA Admin", charset="UTF-8"' },
   });
 }

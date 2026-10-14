@@ -1,10 +1,12 @@
 // Keep navigation synchronous; recording must never block opening FANZA.
-function trackFanzaClick(product, source = "ranking") {
+function trackFanzaClick(product, source = "ranking", linkType = "button") {
   const contentId = product.id || product.content_id;
   if (!contentId || !product.url || product.url === "#") return;
 
   const payload = {
     content_id: contentId,
+    link_source: source,
+    link_type: linkType,
     title: product.title || "",
     actress: product.actresses?.join(", ") || product.actress || "",
     maker: product.maker || "",
@@ -38,14 +40,14 @@ function trackFanzaClick(product, source = "ranking") {
   }
 }
 
-function bindFanzaProductLink(link, product, source) {
+function bindFanzaProductLink(link, product, source, linkType = "button") {
   link.href = product.url;
   link.target = "_blank";
   link.rel = "nofollow noopener noreferrer sponsored";
 
   const onActivate = (event) => {
     if (event.type === "auxclick" && event.button !== 1) return;
-    trackFanzaClick(product, source);
+    trackFanzaClick(product, source, linkType);
     try {
       const history = JSON.parse(localStorage.getItem("viewHistory") || "[]");
       localStorage.setItem("viewHistory", JSON.stringify([
@@ -333,7 +335,8 @@ function showMessage(message) {
 
 function setProductImage(
   product,
-  placeholder
+  placeholder,
+  source
 ) {
   if (!product.images.length) {
     placeholder.textContent = "画像なし";
@@ -358,7 +361,7 @@ function setProductImage(
   imageLink.style.width = "100%";
   imageLink.style.height = "100%";
   imageLink.setAttribute("aria-label", `${product.title}をFANZAで見る`);
-  bindFanzaProductLink(imageLink, product, "image");
+  bindFanzaProductLink(imageLink, product, source, "image");
   imageLink.appendChild(image);
 
   let imageIndex = 0;
@@ -872,7 +875,8 @@ function renderRecommendations() {
 
     setProductImage(
       product,
-      node.querySelector(".placeholder")
+      node.querySelector(".placeholder"),
+      "recommendation"
     );
 
     node.querySelector(".price").textContent =
@@ -1075,7 +1079,8 @@ function renderSaleProducts(saleProducts) {
 
     setProductImage(
       product,
-      node.querySelector(".placeholder")
+      node.querySelector(".placeholder"),
+      "sale"
     );
 
       const priceElement =
@@ -1286,7 +1291,8 @@ function renderRelatedProducts() {
 
     setProductImage(
       product,
-      node.querySelector(".placeholder")
+      node.querySelector(".placeholder"),
+      "related"
     );
 
     node.querySelector(".price").textContent =
@@ -1420,7 +1426,8 @@ let filtered = showHistoryOnly
       product,
       node.querySelector(
         ".placeholder"
-      )
+      ),
+      showHistoryOnly ? "history" : showFavoritesOnly ? "favorites" : "search"
     );
 
     const tags =

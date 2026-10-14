@@ -696,7 +696,7 @@ function trackRankingActivation(event) {
     maker: button.dataset.maker,
     genre: button.dataset.genre,
     url: button.getAttribute("href"),
-  }, "ranking");
+  }, "ranking", button.matches(".ranking-image-link") ? "image" : "button");
 }
 document.addEventListener("click", trackRankingActivation);
 document.addEventListener("auxclick", trackRankingActivation);
