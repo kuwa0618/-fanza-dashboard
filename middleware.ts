@@ -1,8 +1,9 @@
-import { next } from "@vercel/functions";
+import { next, rewrite } from "@vercel/functions";
 import { adminHeaders, isAdminAuthorized } from "./lib/admin-auth.js";
 
 export const config = {
   matcher: [
+    "/",
     "/click-analysis.html",
     "/click-analysis.html/:path*",
     "/click-analysis/:path*",
@@ -20,6 +21,12 @@ export const config = {
 };
 
 export default function middleware(request: Request) {
+  const url = new URL(request.url);
+  if (url.pathname === "/") {
+    url.pathname = "/api/search";
+    url.searchParams.set("view", "page");
+    return rewrite(url);
+  }
   const headers = { ...adminHeaders };
   if (!process.env.ADMIN_USER || !process.env.ADMIN_PASSWORD) {
     return new Response("管理用の認証設定がありません。", { status: 503, headers });
