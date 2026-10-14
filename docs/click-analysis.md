@@ -1,7 +1,7 @@
 # 管理者専用クリック分析
 
 - 本番URL: `/click-analysis.html`（既存の `ADMIN_USER` / `ADMIN_PASSWORD` によるBasic認証）
-- API: `GET /api/click-analysis?days=7|30|90` または `?from=YYYY-MM-DD&to=YYYY-MM-DD`
+- API: `GET /api/stats?view=click-analysis&days=7|30|90` または `?view=click-analysis&from=YYYY-MM-DD&to=YYYY-MM-DD`
 - middlewareでHTMLを保護し、APIでも独立して認証。認証設定がない場合も拒否します。
 - 日別・作品別（上位50）・掲載場所別を日本時間で集計。最大90日、10万件。上限を超える場合はエラーを表示し、切り捨てた数値は表示しません。
 - ページ/APIの応答は `private, no-store`。管理者情報・DB接続情報はサーバーの環境変数のみで管理します。ブラウザにDBキーを渡しません。
@@ -23,3 +23,5 @@
 `node --test tests/*.test.mjs`
 
 本番では未認証アクセスの拒否、認証後の集計、作品画像とボタンのクリックが同じ掲載場所・異なる形式として記録されることを確認してください。
+
+既存管理API `/api/stats` に分析モードを統合し、Vercel関数数は従来の12本を維持しています。従来モードは従来のJSON形式を保持します。
