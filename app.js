@@ -81,6 +81,7 @@ let showHistoryOnly = false;
 let nextOffset = 1;
 let currentKeyword = "";
 let isLoadingMore = false;
+let searchRequestId = 0;
 
 const $ = (id) => document.getElementById(id);
 const results = $("results");
@@ -99,45 +100,37 @@ function getItemInfoNames(product, key) {
     .filter(Boolean);
 }
 
+// Accept one monetary amount (including the API's trailing range marker).
+// Never turn ranges such as "500～1000" into the fictional price 5001000.
 function toNumber(value) {
-  if (value == null) return 0;
-  return Number(String(value).replace(/[^\d]/g, "")) || 0;
+  const text = String(value ?? "").trim().replace(/,/g, "");
+  return /^\d+(?:[~〜～])?$/.test(text) ? Number(text.replace(/[~〜～]/g, "")) : 0;
 }
 
 function getDeliveries(product) {
   return asArray(product?.prices?.deliveries?.delivery);
 }
 
-function getPrice(product) {
-  const directPrice = toNumber(product?.prices?.price);
-
-  if (directPrice > 0) {
-    return directPrice;
-  }
-
-  const deliveryPrices = getDeliveries(product)
-    .map((delivery) => toNumber(delivery?.price))
-    .filter((price) => price > 0);
-
-  return deliveryPrices.length
-    ? Math.min(...deliveryPrices)
-    : 0;
+function getPricePair(product) {
+  const pairs = getDeliveries(product).map((delivery) => ({
+    price: toNumber(delivery?.price),
+    listPrice: toNumber(delivery?.list_price),
+  })).filter((pair) => pair.price > 0);
+  // Compare within one delivery format; unrelated formats are not discounts.
+  const discounted = pairs.filter((pair) => pair.listPrice > pair.price);
+  if (discounted.length) return discounted.sort((a, b) => a.price - b.price)[0];
+  if (pairs.length) return pairs.sort((a, b) => a.price - b.price)[0];
+  return { price: toNumber(product?.prices?.price), listPrice: toNumber(product?.prices?.list_price) };
 }
 
-function getListPrice(product) {
-  const directPrice = toNumber(product?.prices?.list_price);
+function getPrice(product) { return getPricePair(product).price; }
+function getListPrice(product) { return getPricePair(product).listPrice; }
 
-  if (directPrice > 0) {
-    return directPrice;
-  }
-
-  const deliveryPrices = getDeliveries(product)
-    .map((delivery) => toNumber(delivery?.list_price))
-    .filter((price) => price > 0);
-
-  return deliveryPrices.length
-    ? Math.max(...deliveryPrices)
-    : 0;
+function getReview(product) {
+  const average = Number(product?.review?.average);
+  const count = Number(product?.review?.count);
+  return Number.isFinite(average) && average >= 1 && average <= 5 &&
+    Number.isSafeInteger(count) && count > 0 ? { average, count } : null;
 }
 
 function addImageCandidate(list, value) {
@@ -208,6 +201,9 @@ function normalizeProduct(product) {
   const price = getPrice(product);
   const listPrice = getListPrice(product);
   const tags = [];
+  const review = getReview(product);
+  if (price > 0 && listPrice > price) tags.push("セール");
+  if (review && review.average >= 4) tags.push("高評価");
 
   if (isNewProduct(product)) {
     tags.push("新作");
@@ -242,6 +238,8 @@ function normalizeProduct(product) {
     tags,
     price,
     listPrice,
+    review,
+    catalogRank: Number.isSafeInteger(product.catalogRank) && product.catalogRank > 0 ? product.catalogRank : null,
 
     date:
       product.date ||
@@ -639,6 +637,7 @@ async function fetchProducts(
 ) {
   const keyword =
     $("keyword").value.trim();
+  const requestId = ++searchRequestId;
 
   if (!append) {
     currentKeyword = keyword;
@@ -674,6 +673,7 @@ async function fetchProducts(
       new URLSearchParams({
         hits: "20",
         offset: String(nextOffset),
+        sort: $("sortFilter").value === "popular" ? "rank" : $("sortFilter").value === "priceLow" ? "price" : "date",
       });
 
     if (currentKeyword) {
@@ -690,6 +690,7 @@ async function fetchProducts(
 
     const data =
       await response.json();
+    if (requestId !== searchRequestId) return;
     
 　　if (!append) {
  　　 recommendationProducts = asArray(data.recommendations).map(normalizeProduct);
@@ -724,8 +725,7 @@ localStorage.setItem(
   "favoriteProducts",
   JSON.stringify(favoriteProducts)
 );
-    nextOffset +=
-      newProducts.length;
+    nextOffset += Number(data.resultCount ?? newProducts.length);
 
     updateFilters();
     render();
@@ -736,6 +736,7 @@ localStorage.setItem(
         Number(data.totalCount || 0)
     );
   } catch (error) {
+    if (requestId !== searchRequestId) return;
     console.error(error);
 
     if (!append) {
@@ -749,6 +750,7 @@ localStorage.setItem(
       alert(error.message);
     }
   } finally {
+    if (requestId !== searchRequestId) return;
     $("searchBtn").disabled = false;
     $("searchBtn").textContent =
       "検索";
@@ -1332,6 +1334,10 @@ function renderRelatedProducts() {
 }
 
 function render() {
+  document.querySelectorAll("[data-chip]").forEach((chip) => {
+    chip.classList.toggle("active", chip.dataset.chip === activeChip);
+    chip.setAttribute("aria-pressed", String(chip.dataset.chip === activeChip));
+  });
   const genre =
     $("genreFilter").value;
 
@@ -1369,8 +1375,11 @@ let filtered = showHistoryOnly
     });
   
   filtered.sort((a, b) => {
+    if (sort === "popular") {
+      return (a.catalogRank ?? Infinity) - (b.catalogRank ?? Infinity) || 0;
+    }
     if (sort === "priceLow") {
-      return a.price - b.price;
+      return (a.price || Infinity) - (b.price || Infinity) || 0;
     }
 
     return (
@@ -1473,6 +1482,9 @@ let filtered = showHistoryOnly
       product.price > 0
         ? `通常 ¥${product.listPrice.toLocaleString()}`
         : "";
+    if (product.review) {
+      node.querySelector(".rating").textContent += ` 評価 ${product.review.average.toFixed(1)} / 5（${product.review.count}件）`;
+    }
 
     const favoriteButton =
       node.querySelector(
@@ -1542,6 +1554,9 @@ let filtered = showHistoryOnly
     
   });
 
+  $("filterStatus").textContent = showFavoritesOnly || showHistoryOnly
+    ? "保存済み作品を表示。人気順は保存時に取得したFANZA順位のある作品を優先します。"
+    : `絞り込みは読み込み済み${products.length}件が対象です。セール：同じ配信形式で通常価格より安い作品。高評価：FANZAの評価4.0以上・レビュー1件以上。評価未取得の作品は対象外です。${sort === "popular" ? " 人気順はFANZA APIの人気順です。" : ""}`;
   $("resultCount").textContent =
     filtered.length;
 
@@ -1556,7 +1571,7 @@ if (favoriteCountElement) {
 
 if (!filtered.length) {
     showMessage(
-      "条件に一致する作品がありません。"
+      activeChip === "高評価" ? "取得済み作品に評価4.0以上のレビューを確認できません。評価未取得の作品には点数を付けていません。「高評価」を解除するか、さらに作品を読み込んでください。" : "条件に一致する作品がありません。条件を解除するか、さらに作品を読み込んでください。"
     );
   }
 }
@@ -1802,12 +1817,16 @@ document.addEventListener("click", (event) => {
 [
   "genreFilter",
   "makerFilter",
-  "sortFilter",
 ].forEach((id) => {
   $(id).addEventListener(
     "change",
     render
   );
+});
+
+$("sortFilter").addEventListener("change", () => {
+  if (showFavoritesOnly || showHistoryOnly) render();
+  else fetchProducts(false);
 });
 
 $("keyword").addEventListener("focus", () => {
@@ -1862,6 +1881,7 @@ $("keyword").setAttribute("autocomplete", "new-password");
               chip.dataset.chip ===
                 activeChip
             );
+            chip.setAttribute("aria-pressed", String(chip.dataset.chip === activeChip));
           });
 
         render();
