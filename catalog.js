@@ -12,12 +12,19 @@
   try { if (localStorage.getItem('ageConfirmed') === '1') enter(); } catch {}
   const products = JSON.parse(document.getElementById('catalogProducts').textContent);
   const sources = {sale:'sale_page', vr:'vr_page', new:'new_page'};
+  // A failed cover must not remove the card's title, prices or FANZA button.
+  for (const image of document.querySelectorAll('.catalog-image')) {
+    const hideUnavailable = () => { image.parentElement.hidden = true; };
+    image.addEventListener('error', hideUnavailable, {once:true});
+    // Handle an image that failed before this deferred script was loaded.
+    if (image.complete && image.naturalWidth === 0) hideUnavailable();
+  }
   for (const link of document.querySelectorAll('[data-product]')) {
     const activate = event => {
       if (main.inert || (event.type === 'auxclick' && event.button !== 1)) return;
       const product = products[Number(link.dataset.product)];
       if (!product?.id || !product.url) return;
-      const payload = {content_id:product.id, title:product.title, actress:product.actresses.join(', '), maker:product.maker, genre:product.genres.join(', '), link_source:sources[document.body.dataset.catalog], link_type:'button'};
+      const payload = {content_id:product.id, title:product.title, actress:product.actresses.join(', '), maker:product.maker, genre:product.genres.join(', '), link_source:sources[document.body.dataset.catalog], link_type:link.dataset.linkType === 'image' ? 'image' : 'button'};
       // Navigation remains native and synchronous, including middle-click and modifier-click.
       try { fetch('/api/click', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload), keepalive:true}).catch(() => {}); } catch {}
       try { if (typeof window.gtag === 'function') window.gtag('event','fanza_click',{...payload,link_url:product.url,transport_type:'beacon'}); } catch {}
