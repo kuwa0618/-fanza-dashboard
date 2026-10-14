@@ -93,7 +93,7 @@ test('middleware protects HTML and aliases, preserves no-store headers on succes
  const { adminHeaders } = await import('../lib/admin-auth.js');
  const source=fs.readFileSync(new URL('../middleware.ts',import.meta.url),'utf8');
  const compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
- const exports={};const sandbox={exports,process,Response,require:(name)=>name==='@vercel/functions'?{next:({headers})=>new Response('next',{headers})}:{isAdminAuthorized,adminHeaders}};
+ const exports={};const sandbox={exports,process,Response,URL,require:(name)=>name==='@vercel/functions'?{next:({headers})=>new Response('next',{headers})}:{isAdminAuthorized,adminHeaders}};
  vm.runInNewContext(compiled,sandbox);
  configure();const unauth=exports.default(new Request('https://example.com/click-analysis.html'));assert.equal(unauth.status,401);
  const auth=exports.default(new Request('https://example.com/click-analysis.html',{headers:{authorization}}));assert.equal(auth.status,200);assert.match(auth.headers.get('cache-control'),/private, no-store/);
