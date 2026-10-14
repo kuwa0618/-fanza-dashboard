@@ -990,6 +990,7 @@ renderRelatedProducts();
       "セール作品の取得に失敗しました。",
       error
     );
+    $("saleNavigationStatus").textContent = "セール作品を取得できませんでした。時間をおいてページを再読み込みしてください。";
   }
 }
 
@@ -1030,14 +1031,8 @@ function renderSaleProducts(saleProducts) {
       </button> 
     `;
 
-    const recommendSection =
-      document.getElementById("recommendSection");
-
-    if (recommendSection) {
-      recommendSection.after(section);
-    } else {
-      results.before(section);
-    }
+    // The anchor exists before the API resolves, including empty/error states.
+    $("saleBrowse").appendChild(section);
   }
 
   const area =
@@ -1136,6 +1131,8 @@ function renderSaleProducts(saleProducts) {
     area.appendChild(node);
   });
 
+  $("saleNavigationStatus").textContent = saleProducts.length
+    ? "" : "現在の取得結果にセール対象作品はありません。";
   section.style.display =
     saleProducts.length ? "block" : "none";
     const moreBtn = document.getElementById("saleMoreBtn");
@@ -2043,6 +2040,7 @@ $("enterBtn").addEventListener(
     $("ageGate").classList.add(
       "hidden"
     );
+    $("topQuickNav").inert = false;
   }
 );
 
@@ -2085,6 +2083,7 @@ if (
   $("ageGate").classList.add(
     "hidden"
   );
+  $("topQuickNav").inert = false;
 }
 
 const actressFromUrl =

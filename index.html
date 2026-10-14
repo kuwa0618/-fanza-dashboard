@@ -48,8 +48,12 @@
     <p class="header-description">
       気分や好みに合わせて、あなたにぴったりの作品探しをお手伝いします。
     </p>
+    <nav id="topQuickNav" class="top-quick-nav" aria-label="作品へのショートカット" inert>
+      <a class="quick-link quick-link-search" href="#searchPanel">作品を探す</a>
+      <a class="quick-link quick-link-sale" href="#saleBrowse">セール作品を見る</a>
+    </nav>
   </div>
-    <div style="display:flex;gap:10px;">
+    <div class="header-actions">
   <button id="favoritesBtn" class="icon-btn">
     ♡ お気に入り <span id="favoriteCount">0</span>
   </button>
@@ -117,7 +121,7 @@
     </div>
   </section>
 
-  <section class="search-panel">
+  <section id="searchPanel" class="search-panel" tabindex="-1" aria-label="作品を探す">
     <div id="activeMood" class="active-mood hidden">
   <span id="activeMoodText"></span>
 
@@ -208,6 +212,9 @@
       <button id="resetBtn" class="secondary">条件をリセット</button>
     </section>
 
+    <section id="saleBrowse" class="sale-browse" tabindex="-1" aria-label="セール作品">
+      <p id="saleNavigationStatus" role="status">セール作品を読み込んでいます…</p>
+    </section>
     <section id="results" class="cards"></section>
     
 
