@@ -6,7 +6,6 @@ export const config = {
     "/click-analysis.html",
     "/click-analysis.html/:path*",
     "/click-analysis/:path*",
-    "/api/click-analysis/:path*",
     "/analysis",
     "/post-form",
     "/dashboard",
