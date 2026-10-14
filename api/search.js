@@ -47,7 +47,7 @@ const nowJst = new Date()
     floor: "videoa",
    hits: String(hits),
 offset: String(offset),
-sort: "date",
+sort: ["rank", "price", "date"].includes(req.query.sort) ? req.query.sort : "date",
 lte_date: nowJst,
 output: "json",
   });
@@ -89,6 +89,11 @@ if (mode === "sale") {
   ? data.result.items
   : [];
 
+    // Preserve the upstream position; no synthetic popularity scores.
+    if (params.get("sort") === "rank") {
+      products = products.map((product, index) => ({ ...product, catalogRank: offset + index }));
+    }
+
 if (mode === "sale") {
   products = products.filter((product) => {
     const deliveries = Array.isArray(
@@ -99,30 +104,23 @@ if (mode === "sale") {
       ? [product.prices.deliveries.delivery]
       : [];
 
-    const prices = [
-      {
-        price: product?.prices?.price,
-        listPrice: product?.prices?.list_price,
-      },
-      ...deliveries.map((delivery) => ({
-        price: delivery?.price,
-        listPrice: delivery?.list_price,
-      })),
-    ];
+    const prices = deliveries.length ? deliveries.map((delivery) => ({
+      price: delivery?.price, listPrice: delivery?.list_price,
+    })) : [{ price: product?.prices?.price, listPrice: product?.prices?.list_price }];
 
     return prices.some(({ price, listPrice }) => {
-      const salePrice =
-        Number(String(price || "").replace(/[^\d]/g, "")) || 0;
-
-      const regularPrice =
-        Number(String(listPrice || "").replace(/[^\d]/g, "")) || 0;
+      const amount = (value) => {
+        const text = String(value ?? "").trim().replace(/,/g, "");
+        return /^\d+(?:[~〜～])?$/.test(text) ? Number(text.replace(/[~〜～]/g, "")) : 0;
+      };
+      const salePrice = amount(price);
+      const regularPrice = amount(listPrice);
 
       return regularPrice > salePrice && salePrice > 0;
     });
   });
 }
 
-    console.log(JSON.stringify(products[0], null, 2));
     return res.status(200).json({
       success: true,
       keyword,
