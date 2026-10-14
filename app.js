@@ -1483,7 +1483,7 @@ let filtered = showHistoryOnly
         ? `通常 ¥${product.listPrice.toLocaleString()}`
         : "";
     if (product.review) {
-      node.querySelector(".rating").textContent += ` 評価 ${product.review.average.toFixed(1)} / 5（${product.review.count}件）`;
+      node.querySelector(".rating").textContent += ` 評価 ${product.review.average} / 5（${product.review.count}件）`;
     }
 
     const favoriteButton =
