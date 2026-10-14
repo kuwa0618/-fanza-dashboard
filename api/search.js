@@ -1,3 +1,4 @@
+import { productPage } from "../lib/product-page.js";
 import { readFile } from "node:fs/promises";
 import { renderSeoPage, escapeHtml } from "../lib/seo.js";
 
@@ -52,6 +53,7 @@ async function homepage(req, res) {
 }
 
 export default async function handler(req, res) {
+  if (req.query.view === "product" && ["GET", "HEAD"].includes(req.method)) return productPage(req,res);
   if (req.query.view === "catalog" && ["GET", "HEAD"].includes(req.method)) {
     const key = req.query.category;
     if (typeof key !== "string" || !Object.hasOwn(catalogPages, key)) return res.status(404).send("ページが見つかりません。");
