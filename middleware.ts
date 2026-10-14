@@ -7,6 +7,7 @@ export const config = {
     "/sale",
     "/vr",
     "/new",
+    "/product/:path*",
     "/click-analysis.html",
     "/click-analysis.html/:path*",
     "/click-analysis/:path*",
@@ -36,6 +37,16 @@ export default function middleware(request: Request) {
     url.search = "";
     url.searchParams.set("view", "catalog");
     url.searchParams.set("category", category);
+    return rewrite(url);
+  }
+  if (url.pathname === "/product" || url.pathname.startsWith("/product/")) {
+    const match = url.pathname.match(/^\/product\/([a-zA-Z0-9_]{3,80})(\/?)$/);
+    if (!match) return new Response("作品が見つかりません。", {status:404,headers:{"X-Robots-Tag":"noindex, follow","Cache-Control":"no-store"}});
+    if (match[2]) {url.pathname = "/product/" + match[1];return Response.redirect(url,308);}
+    url.pathname = "/api/search";
+    url.search = "";
+    url.searchParams.set("view", "product");
+    url.searchParams.set("id", match[1]);
     return rewrite(url);
   }
   const headers = { ...adminHeaders };
