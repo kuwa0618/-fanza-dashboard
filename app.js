@@ -1,3 +1,67 @@
+// Keep navigation synchronous; recording must never block opening FANZA.
+function trackFanzaClick(product, source = "ranking") {
+  const contentId = product.id || product.content_id;
+  if (!contentId || !product.url || product.url === "#") return;
+
+  const payload = {
+    content_id: contentId,
+    title: product.title || "",
+    actress: product.actresses?.join(", ") || product.actress || "",
+    maker: product.maker || "",
+    genre: product.genres?.join(", ") || product.genre || "",
+  };
+
+  try {
+    fetch("/api/click", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    }).then((response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    }).catch((error) => console.error("クリック記録に失敗しました:", error));
+  } catch (error) {
+    console.error("クリック記録に失敗しました:", error);
+  }
+
+  try {
+    if (typeof window.gtag === "function") {
+      window.gtag("event", "fanza_click", {
+        ...payload,
+        link_url: product.url,
+        link_source: source,
+        transport_type: "beacon",
+      });
+    }
+  } catch (error) {
+    console.error("GAクリック記録に失敗しました:", error);
+  }
+}
+
+function bindFanzaProductLink(link, product, source) {
+  link.href = product.url;
+  link.target = "_blank";
+  link.rel = "nofollow noopener noreferrer sponsored";
+
+  const onActivate = (event) => {
+    if (event.type === "auxclick" && event.button !== 1) return;
+    trackFanzaClick(product, source);
+    try {
+      const history = JSON.parse(localStorage.getItem("viewHistory") || "[]");
+      localStorage.setItem("viewHistory", JSON.stringify([
+        product,
+        ...history.filter((item) => item.id !== product.id),
+      ].slice(0, 50)));
+      saveRelatedSource(product);
+    } catch (error) {
+      console.error("作品の閲覧履歴保存に失敗しました:", error);
+    }
+  };
+
+  link.addEventListener("click", onActivate);
+  link.addEventListener("auxclick", onActivate);
+}
+
 let products = [];
 let recommendationProducts = [];
 let recommendationVisibleCount = 6;
@@ -288,27 +352,14 @@ function setProductImage(
   image.style.objectFit = "cover";
   image.style.cursor = "pointer";
 
-  image.addEventListener("click", () => {
-   const history = JSON.parse(
-  localStorage.getItem("viewHistory") || "[]"
-);
-
-const newHistory = [
-  product,
-  ...history.filter((item) => item.id !== product.id),
-].slice(0, 50);
-
-localStorage.setItem(
-  "viewHistory",
-  JSON.stringify(newHistory)
-);
-    
-    window.open(
-      product.url,
-      "_blank",
-      "noopener,noreferrer"
-    );
-  });
+  const imageLink = document.createElement("a");
+  imageLink.className = "product-image-link";
+  imageLink.style.display = "block";
+  imageLink.style.width = "100%";
+  imageLink.style.height = "100%";
+  imageLink.setAttribute("aria-label", `${product.title}をFANZAで見る`);
+  bindFanzaProductLink(imageLink, product, "image");
+  imageLink.appendChild(image);
 
   let imageIndex = 0;
 
@@ -338,7 +389,7 @@ localStorage.setItem(
     loadNextImage
   );
 
-  placeholder.replaceWith(image);
+  placeholder.replaceWith(imageLink);
 
   loadNextImage();
 }
@@ -851,25 +902,7 @@ favoriteButton.addEventListener("click", () => {
     const link =
       node.querySelector(".detail-link");
 
-   link.href = product.url;
-link.target = "_blank";
-link.rel = "noopener noreferrer sponsored";
-link.addEventListener("click", () => {
-  saveRelatedSource(product);
-  const history = JSON.parse(
-    localStorage.getItem("viewHistory") || "[]"
-  );
-
-  const newHistory = [
-    product,
-    ...history.filter((item) => item.id !== product.id),
-  ].slice(0, 50);
-
-  localStorage.setItem(
-    "viewHistory",
-    JSON.stringify(newHistory)
-  );
-});
+    bindFanzaProductLink(link, product, "recommendation");
     
 area.appendChild(node);
   });
@@ -1091,30 +1124,7 @@ function renderSaleProducts(saleProducts) {
     const link =
       node.querySelector(".detail-link");
 
-    link.href = product.url;
-    link.target = "_blank";
-    link.rel =
-      "noopener noreferrer sponsored";
-
-    link.addEventListener("click", () => {
-  saveRelatedSource(product);
-      const history = JSON.parse(
-        localStorage.getItem("viewHistory") ||
-        "[]"
-      );
-
-      const newHistory = [
-        product,
-        ...history.filter(
-          (item) => item.id !== product.id
-        ),
-      ].slice(0, 50);
-
-      localStorage.setItem(
-        "viewHistory",
-        JSON.stringify(newHistory)
-      );
-    });
+    bindFanzaProductLink(link, product, "sale");
 
     area.appendChild(node);
   });
@@ -1309,14 +1319,7 @@ function renderRelatedProducts() {
     const link =
       node.querySelector(".detail-link");
 
-    link.href = product.url;
-    link.target = "_blank";
-    link.rel =
-      "noopener noreferrer sponsored";
-
-    link.addEventListener("click", () => {
-      saveRelatedSource(product);
-    });
+    bindFanzaProductLink(link, product, "related");
 
     area.appendChild(node);
   });
@@ -1514,46 +1517,7 @@ let filtered = showHistoryOnly
         ".detail-link"
       );
 
-    detailLink.href =
-      product.url;
-
-    detailLink.target =
-      "_blank";
-
-    detailLink.rel =
-      "noopener noreferrer sponsored";
-  
-    detailLink.addEventListener("click", () => {
-  saveRelatedSource(product);
-     const history = JSON.parse(
-  localStorage.getItem("viewHistory") || "[]"
-);
-
-const newHistory = [
-  product,
-  ...history.filter((item) => item.id !== product.id),
-].slice(0, 50);
-
-localStorage.setItem(
-  "viewHistory",
-  JSON.stringify(newHistory)
-);
-      fetch("/api/click", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      content_id: product.id,
-      title: product.title,
-      actress: product.actresses?.join(", ") || "",
-      maker: product.maker || "",
-      genre: product.genres?.join(", ") || "",
-    }),
-  }).catch((error) => {
-    console.error("クリック記録に失敗しました:", error);
-  });
-});
+    bindFanzaProductLink(detailLink, product, showHistoryOnly ? "history" : showFavoritesOnly ? "favorites" : "search");
       if (showHistoryOnly) {
       const removeButton = document.createElement("button");
 

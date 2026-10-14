@@ -380,12 +380,22 @@ rankingList.innerHTML = visibleRankings
 
           ${
             image
-              ? `<img
+              ? `<a
+  class="ranking-image-link"
+  href="${escapeRankingText(url)}"
+  target="_blank"
+  rel="nofollow sponsored noopener"
+  data-content-id="${escapeRankingText(product?.content_id || product?.product_id || item.content_id || "")}"
+  data-title="${title}"
+  data-actress="${actress}"
+  data-maker="${escapeRankingText(item.maker || "")}"
+  data-genre="${escapeRankingText(item.genre || "")}"
+><img
                   class="ranking-card-image"
                   src="${escapeRankingText(image)}"
                   alt="${title}"
                   loading="lazy"
-                >`
+                ></a>`
               : `<div class="ranking-card-no-image">IMAGE</div>`
           }
         </div>
@@ -415,7 +425,7 @@ rankingList.innerHTML = visibleRankings
   href="${escapeRankingText(url)}"
   target="_blank"
   rel="nofollow sponsored noopener"
-  data-content-id="${escapeRankingText(product?.content_id || product?.product_id || "")}"
+  data-content-id="${escapeRankingText(product?.content_id || product?.product_id || item.content_id || "")}"
   data-title="${title}"
   data-actress="${actress}"
   data-maker="${escapeRankingText(item.maker || "")}"
@@ -674,26 +684,22 @@ document.querySelectorAll(".ranking-tab").forEach((btn) => {
 });
 
 loadAllRankings();
-document.addEventListener("click", (event) => {
-  const button = event.target.closest(".ranking-card-button");
+function trackRankingActivation(event) {
+  if (event.type === "auxclick" && event.button !== 1) return;
+  const button = event.target.closest(".ranking-card-button, .ranking-image-link");
   if (!button) return;
 
-  fetch("/api/click", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      content_id: button.dataset.contentId,
-      title: button.dataset.title,
-      actress: button.dataset.actress,
-      maker: button.dataset.maker,
-      genre: button.dataset.genre,
-    }),
-  }).catch((error) => {
-    console.error("ランキングクリック記録に失敗しました:", error);
-  });
-});    
+  trackFanzaClick({
+    content_id: button.dataset.contentId,
+    title: button.dataset.title,
+    actress: button.dataset.actress,
+    maker: button.dataset.maker,
+    genre: button.dataset.genre,
+    url: button.getAttribute("href"),
+  }, "ranking");
+}
+document.addEventListener("click", trackRankingActivation);
+document.addEventListener("auxclick", trackRankingActivation);
 </script>
   <script src="app.js"></script>
   <footer class="site-footer">
