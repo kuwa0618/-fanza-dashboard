@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import { isAdminAuthorized } from '../lib/admin-auth.js';
 import { getPeriod, aggregateClicks, normalizeSource } from '../lib/click-analytics.js';
-import analysis from '../api/click-analysis.js';
+import { clickAnalysis as analysis } from '../api/stats.js';
 import click from '../api/click.js';
 
 const env = { ...process.env };
@@ -97,6 +97,6 @@ test('middleware protects HTML and aliases, preserves no-store headers on succes
  vm.runInNewContext(compiled,sandbox);
  configure();const unauth=exports.default(new Request('https://example.com/click-analysis.html'));assert.equal(unauth.status,401);
  const auth=exports.default(new Request('https://example.com/click-analysis.html',{headers:{authorization}}));assert.equal(auth.status,200);assert.match(auth.headers.get('cache-control'),/private, no-store/);
- for(const route of ['/click-analysis.html','/click-analysis/:path*','/api/click-analysis/:path*'])assert(exports.config.matcher.includes(route));
+ for(const route of ['/click-analysis.html','/click-analysis/:path*','/api/stats'])assert(exports.config.matcher.includes(route));
  delete process.env.ADMIN_USER;assert.equal(exports.default(new Request('https://example.com/click-analysis.html',{headers:{authorization}})).status,503);
 });
