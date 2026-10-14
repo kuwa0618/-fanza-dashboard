@@ -1,0 +1,60 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtemp,readFile,writeFile,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {SITE_URL} from '../lib/seo.js';
+import {renderProductDetail} from '../lib/product-page.js';
+import {PUBLIC_PATHS,MAX_PRODUCTS,MAX_DETAIL_CHECKS,detailLinks,pageIsIndexable,validDetail,renderSitemap,validateSitemap,collectSitemap,refreshSitemap} from '../scripts/update-sitemap.mjs';
+
+const response=(status=200,headers={})=>new Response('',{status,headers:{'content-type':'text/html; charset=utf-8',...headers}});
+const id='actual001';
+const detail=(value=id)=>renderProductDetail({content_id:value,title:'API title',affiliateURL:'https://al.fanza.co.jp/'},value);
+const page=(path,links=[])=>`<link rel="canonical" href="${new URL(path,SITE_URL).href}"><h1>Catalog</h1>${links.map(p=>`<a href="${p}">detail</a>`).join('')}`;
+const fixtureFetch=(ids,{broken=new Map(),calls=[]}={})=>async(url,options)=>{
+ const path=new URL(url).pathname;calls.push(path);assert.equal(options.redirect,'manual');assert(options.signal);
+ if(PUBLIC_PATHS.includes(path))return new Response(page(path,ids.map(i=>'/product/'+i)),{headers:{'content-type':'text/html'}});
+ if(broken.has(path)){const value=broken.get(path);if(value instanceof Error)throw value;return value;}
+ return new Response(detail(path.slice(9)),{headers:{'content-type':'text/html'}});
+};
+
+test('only exact product anchors are discovered, with unique canonical URLs and seven public pages',()=>{
+ assert.deepEqual(detailLinks(page('/sale',['/product/'+id,'/product/'+id,'/product/bad-id','/product/'+id+'?x=1','https://evil.example/product/'+id,'https://user@fanza-dashboard-omega.vercel.app/product/'+id,'/api/search'])),['/product/'+id]);
+ const xml=renderSitemap([...PUBLIC_PATHS,'/product/'+id]);assert.equal(validateSitemap(xml).urls.length,8);assert(!xml.includes('lastmod'));
+ for(const invalid of [xml.replace('<url><loc>', '<lastmod>2026-01-01</lastmod><url><loc>'),xml.replace('/product/'+id,'/api/search'),xml.replace('/product/'+id,'/product/'+id+'?page=2'),xml.replace('/product/'+id,'/product/bad-id'),xml.replace('https://fanza-dashboard-omega.vercel.app/product/','https://user@fanza-dashboard-omega.vercel.app/product/'),xml.replace('</urlset>','<unexpected/></urlset>')])assert.throws(()=>validateSitemap(invalid));
+ assert.throws(()=>renderSitemap([...PUBLIC_PATHS,PUBLIC_PATHS[0]]));assert.throws(()=>renderSitemap(PUBLIC_PATHS.slice(1)));
+});
+
+test('details require HTTP 200, one self canonical, matching product data, H1 and internal return links',()=>{
+ const html=detail();assert(validDetail(response(),html,'/product/'+id));
+ for(const status of [302,404,503])assert(!validDetail(response(status),html,'/product/'+id));
+ for(const headers of [{'x-robots-tag':'noindex'},{'content-type':'text/plain'}])assert(!validDetail(response(200,headers),html,'/product/'+id));
+ for(const bad of [html.replace('/product/'+id,'/product/wrong001'),html.replace('data-content-id="'+id+'"','data-content-id="wrong001"'),html.replace('"id":"'+id+'"','"id":"wrong001"'),html.replace('<h1>','<h2>'),html.replace('</head>','<meta name="robots" content="noindex"></head>'),html.replaceAll('href="/sale"','href="/missing"').replaceAll('href="/vr"','href="/missing"').replaceAll('href="/new"','href="/missing"').replaceAll('href="/"','href="/missing"')])assert(!validDetail(response(),bad,'/product/'+id));
+ assert(!pageIsIndexable({...response(),status:200,url:SITE_URL+'/redirected',headers:response().headers},html,'/product/'+id));
+});
+
+test('refresh checks at most 20 products, deduplicates category links and spaces all requests',async()=>{
+ const ids=Array.from({length:60},(_,i)=>'actual'+String(i).padStart(3,'0'));const calls=[],waits=[];
+ const result=await collectSitemap({fetcher:fixtureFetch(ids,{calls}),wait:async ms=>waits.push(ms)});
+ assert.equal(result.products,MAX_PRODUCTS);assert.equal(result.checked,20);assert.equal(result.requests,27);assert.equal(new Set(calls).size,27);assert.equal(waits.length,26);assert(waits.every(ms=>ms===1200));assert.equal(validateSitemap(result.xml).urls.length,27);
+});
+
+test('404, 503, redirects and network failures are excluded, bounded to 30 detail checks',async()=>{
+ const ids=Array.from({length:50},(_,i)=>'actual'+String(i).padStart(3,'0'));const broken=new Map(ids.slice(0,15).map((value,i)=>['/product/'+value,i%4===0?Error('upstream'):new Response('unavailable',{status:[404,503,302][i%3],headers:{'content-type':'text/html'}})]));
+ const result=await collectSitemap({fetcher:fixtureFetch(ids,{broken}),wait:async()=>{}});
+ assert.equal(result.checked,MAX_DETAIL_CHECKS);assert.equal(result.requests,37);assert.equal(result.products,15);assert.equal(result.skipped.length,15);for(const p of broken.keys())assert(!result.xml.includes(p));
+ await assert.rejects(collectSitemap({fetcher:fixtureFetch(ids,{broken:new Map(ids.map(value=>['/product/'+value,Error('upstream')]))}),wait:async()=>{}}),/No verified products/);
+ await assert.rejects(collectSitemap({fetcher:async()=>new Response('unavailable',{status:503}),wait:async()=>{}}),/Public page unavailable/);
+});
+
+test('an unavailable or malformed refresh preserves the previous complete sitemap, successful writes replace atomically',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'sitemap-test-'));const file=join(dir,'sitemap.xml');const previous=renderSitemap(PUBLIC_PATHS);await writeFile(file,previous);
+ try{
+  for(const collect of [async()=>{throw Error('network')},async()=>({xml:'<urlset>broken</urlset>'})]){await assert.rejects(refreshSitemap(file,{collect}));assert.equal(await readFile(file,'utf8'),previous);}
+  const xml=renderSitemap([...PUBLIC_PATHS,'/product/'+id]);await refreshSitemap(file,{collect:async()=>({xml})});assert.equal(await readFile(file,'utf8'),xml);
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('checked-in snapshot is bounded, unique and contains verified products without invented dates',async()=>{
+ const result=validateSitemap(await readFile(new URL('../sitemap.xml',import.meta.url),'utf8'));assert(result.products>0 && result.products<=MAX_PRODUCTS);assert.equal(result.urls.length,7+result.products);
+});
