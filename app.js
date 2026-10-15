@@ -94,6 +94,12 @@ let nextOffset = 1;
 let currentKeyword = "";
 let isLoadingMore = false;
 let searchRequestId = 0;
+let navigationSearch = window.location.search;
+
+function pushSearchHistory(state, title, url) {
+  history.pushState(state, title, url);
+  navigationSearch = window.location.search;
+}
 
 const $ = (id) => document.getElementById(id);
 const results = $("results");
@@ -478,7 +484,7 @@ function applyActressPageState(
     );
 
     if (pushHistory) {
-      history.pushState(
+      pushSearchHistory(
         { actress },
         "",
         url
@@ -497,7 +503,7 @@ function applyActressPageState(
     url.searchParams.delete("actress");
 
     if (pushHistory) {
-      history.pushState({}, "", url);
+      pushSearchHistory({}, "", url);
     }
 
     setDefaultPageState();
@@ -524,7 +530,7 @@ function searchByKeyword(keyword, scrollToTop = true) {
 
   url.searchParams.delete("actress");
 
-  history.pushState({}, "", url);
+  pushSearchHistory({}, "", url);
 
   setDefaultPageState();
 
@@ -703,11 +709,8 @@ async function fetchProducts(
     const data =
       await response.json();
     if (requestId !== searchRequestId) return;
-    
-　　if (!append) {
- 　　 recommendationProducts = asArray(data.recommendations).map(normalizeProduct);
-  　　renderRecommendations();
-　　}
+
+    // Recommendations are owned by fetchRecommendations, not ordinary searches.
     
     if (
       !response.ok ||
@@ -802,10 +805,13 @@ recommendationVisibleCount = 6;
       "おすすめ作品の取得に失敗しました。",
       error
     );
+    if (!recommendationProducts.length) {
+      renderRecommendations("おすすめ作品を取得できませんでした。時間をおいて再読み込みしてください。");
+    }
   }
 }
 
-function renderRecommendations() {
+function renderRecommendations(message = "おすすめ作品は現在ありません。") {
   let section = document.getElementById("recommendSection");
 
   if (!section) {
@@ -924,6 +930,13 @@ favoriteButton.addEventListener("click", () => {
     
 area.appendChild(node);
   });
+  if (!recommendationProducts.length) {
+    const status = document.createElement("p");
+    status.setAttribute("role", "status");
+    status.textContent = message;
+    area.appendChild(status);
+  }
+
   const prevBtn = document.getElementById("recommendPrevBtn");
 const nextBtn = document.getElementById("recommendNextBtn");
 
@@ -940,12 +953,14 @@ const scrollRecommendations = (direction) => {
 };
 
 if (prevBtn) {
+  prevBtn.disabled = recommendationProducts.length === 0;
   prevBtn.onclick = () => {
     scrollRecommendations(-1);
   };
 }
 
 if (nextBtn) {
+  nextBtn.disabled = recommendationProducts.length === 0;
   nextBtn.onclick = () => {
     scrollRecommendations(1);
   };
@@ -1641,7 +1656,7 @@ $("searchBtn").addEventListener(
       "actress"
     );
 
-    history.pushState(
+    pushSearchHistory(
       {},
       "",
       url
@@ -1692,7 +1707,7 @@ items.forEach((item, index) => {
         "actress"
       );
 
-      history.pushState(
+      pushSearchHistory(
         {},
         "",
         url
@@ -1965,7 +1980,7 @@ $("resetBtn").addEventListener(
       "actress"
     );
 
-    history.pushState(
+    pushSearchHistory(
       {},
       "",
       url
@@ -2063,6 +2078,9 @@ $("leaveBtn").addEventListener(
 window.addEventListener(
   "popstate",
   () => {
+    // Hash-only shortcuts and their Back/Forward navigation must preserve search state.
+    if (navigationSearch === window.location.search) return;
+    navigationSearch = window.location.search;
     const actress =
       new URLSearchParams(
         window.location.search
