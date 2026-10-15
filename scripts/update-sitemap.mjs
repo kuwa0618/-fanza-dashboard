@@ -85,8 +85,8 @@ export async function collectSitemap({existingPaths=[],fetcher=fetch,wait=ms=>ne
     if(response.status===429 || response.status>=500 || response.status===401 || response.status===403)throw Error(`Temporary product failure: ${path} HTTP ${response.status}; keep the previous sitemap`);
     if(validDetail(response,html,path)){verified.add(path);onProgress({path,status:'verified'});}else{skipped.push(path);onProgress({path,status:'excluded'});}
   }
-  // Prefer current category links; validated older pages fill any remaining places.
-  const products=[...new Set([...discovered,...existingPaths])].filter(p=>verified.has(p)).slice(0,MAX_PRODUCTS).sort();
+  // Retain verified existing URLs; new verified candidates only fill vacant places.
+  const products=[...new Set([...existingPaths,...discovered])].filter(p=>verified.has(p)).slice(0,MAX_PRODUCTS).sort();
   if(!products.length)throw Error('No verified products; keep the previous sitemap');
   const paths=[...PUBLIC_PATHS,...products];
   return {xml:renderSitemap(paths),products:products.length,checked,requests,skipped};
