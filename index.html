@@ -187,19 +187,19 @@
   </button>
 </div>
       <div class="filters">
-        <select id="genreFilter">
+        <select id="genreFilter" aria-label="ジャンルで絞り込む">
           <option value="">すべてのジャンル</option>
           <option value="ドラマ">ドラマ</option>
           <option value="恋愛">恋愛</option>
           <option value="企画">企画</option>
         </select>
-        <select id="makerFilter">
+        <select id="makerFilter" aria-label="メーカーで絞り込む">
           <option value="">すべてのメーカー</option>
           <option value="Studio A">Studio A</option>
           <option value="Studio B">Studio B</option>
           <option value="Studio C">Studio C</option>
         </select>
-        <select id="sortFilter">
+        <select id="sortFilter" aria-label="作品の並び順">
           <option value="new">新着順</option>
           <option value="popular">人気順</option>
           <option value="priceLow">価格が安い順</option>
@@ -365,6 +365,10 @@ rankingList.innerHTML = visibleRankings
     );
 
     const title = escapeRankingText(rawTitle);
+    const contentId = String(product?.content_id || product?.product_id || item.content_id || "");
+    const detailTitle = /^[a-zA-Z0-9_]{3,80}$/.test(contentId)
+      ? `<a href="/product/${encodeURIComponent(contentId)}">${title}</a>`
+      : title;
     const actress = escapeRankingText(item.actress || "");
 
     const image =
@@ -395,7 +399,7 @@ rankingList.innerHTML = visibleRankings
       index === 0
         ? `<div class="ranking-hot-badge">🏆 人気No.1</div>`
         : index < 3
-          ? `<div class="ranking-hot-badge">🔥 急上昇</div>`
+          ? `<div class="ranking-hot-badge">人気${index + 1}位</div>`
           : ""
     } 
 
@@ -422,7 +426,7 @@ rankingList.innerHTML = visibleRankings
         </div>
 
         <div class="ranking-card-body">
-          <h3>${title}</h3>
+          <h3>${detailTitle}</h3>
 
           ${
             actress
