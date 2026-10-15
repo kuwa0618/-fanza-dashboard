@@ -26,8 +26,10 @@ async function catalogPage(req, res, key) {
 }
 
 async function homepage(req, res) {
+  // Link previews need the existing public HTML/OGP, not a live catalog lookup.
+  const twitterbot = typeof req.headers?.["user-agent"] === "string" && /\bTwitterbot(?:\/[\d.]+)?\b/i.test(req.headers["user-agent"]);
   let items = [];
-  if (process.env.DMM_API_ID && process.env.DMM_AFFILIATE_ID) {
+  if (!twitterbot && process.env.DMM_API_ID && process.env.DMM_AFFILIATE_ID) {
     try {
       const params = new URLSearchParams({ api_id: process.env.DMM_API_ID, affiliate_id: process.env.DMM_AFFILIATE_ID,
         site: "FANZA", service: "digital", floor: "videoa", hits: "20", offset: "1", sort: "date", output: "json",
@@ -40,7 +42,9 @@ async function homepage(req, res) {
   try {
     const template = await readFile(`${process.cwd()}/index.html`, "utf8");
     res.setHeader("Content-Type", "text/html; charset=utf-8");
-    res.setHeader("Cache-Control", items.length ? "public, max-age=0, s-maxage=300, stale-while-revalidate=600" : "public, max-age=0, s-maxage=30");
+    // Never store the social response in the shared homepage cache.
+    res.setHeader("Cache-Control", twitterbot ? "private, no-store, max-age=0" : items.length ? "public, max-age=0, s-maxage=300, stale-while-revalidate=600" : "public, max-age=0, s-maxage=30");
+    res.setHeader("Vary", "User-Agent");
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Link", '<https://fanza-dashboard-omega.vercel.app/>; rel="canonical"');
     let html = renderSeoPage(template, items);
