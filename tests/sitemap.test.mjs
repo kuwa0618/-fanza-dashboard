@@ -36,15 +36,31 @@ test('details require HTTP 200, one self canonical, matching product data, H1 an
 test('refresh checks at most 20 products, deduplicates category links and spaces all requests',async()=>{
  const ids=Array.from({length:60},(_,i)=>'actual'+String(i).padStart(3,'0'));const calls=[],waits=[];
  const result=await collectSitemap({fetcher:fixtureFetch(ids,{calls}),wait:async ms=>waits.push(ms)});
- assert.equal(result.products,MAX_PRODUCTS);assert.equal(result.checked,20);assert.equal(result.requests,27);assert.equal(new Set(calls).size,27);assert.equal(waits.length,26);assert(waits.every(ms=>ms===1200));assert.equal(validateSitemap(result.xml).urls.length,27);
+ assert.equal(result.products,MAX_PRODUCTS);assert.equal(result.checked,30);assert.equal(result.requests,37);assert.equal(new Set(calls).size,37);assert.equal(waits.length,36);assert(waits.every(ms=>ms===1200));assert.equal(validateSitemap(result.xml).urls.length,27);
 });
 
-test('404, 503, redirects and network failures are excluded, bounded to 30 detail checks',async()=>{
- const ids=Array.from({length:50},(_,i)=>'actual'+String(i).padStart(3,'0'));const broken=new Map(ids.slice(0,15).map((value,i)=>['/product/'+value,i%4===0?Error('upstream'):new Response('unavailable',{status:[404,503,302][i%3],headers:{'content-type':'text/html'}})]));
+test('404 and redirects are excluded, bounded to 30 detail checks; temporary failures abort',async()=>{
+ const ids=Array.from({length:50},(_,i)=>'actual'+String(i).padStart(3,'0'));const broken=new Map(ids.slice(0,15).map((value,i)=>['/product/'+value,new Response('unavailable',{status:[404,302][i%2],headers:{'content-type':'text/html'}})]));
  const result=await collectSitemap({fetcher:fixtureFetch(ids,{broken}),wait:async()=>{}});
  assert.equal(result.checked,MAX_DETAIL_CHECKS);assert.equal(result.requests,37);assert.equal(result.products,15);assert.equal(result.skipped.length,15);for(const p of broken.keys())assert(!result.xml.includes(p));
- await assert.rejects(collectSitemap({fetcher:fixtureFetch(ids,{broken:new Map(ids.map(value=>['/product/'+value,Error('upstream')]))}),wait:async()=>{}}),/No verified products/);
+ await assert.rejects(collectSitemap({fetcher:fixtureFetch(ids,{broken:new Map(ids.map(value=>['/product/'+value,new Response('missing',{status:404})]))}),wait:async()=>{}}),/No verified products/);
+ for(const value of [Error('upstream'),new Response('temporary',{status:503}),new Response('limited',{status:429})])await assert.rejects(collectSitemap({fetcher:fixtureFetch(ids,{broken:new Map([['/product/'+ids[5],value]])}),wait:async()=>{}}),/Temporary product failure/);
  await assert.rejects(collectSitemap({fetcher:async()=>new Response('unavailable',{status:503}),wait:async()=>{}}),/Public page unavailable/);
+});
+
+test('existing products are all revalidated before new candidates, with fresh works and validated older fallbacks',async()=>{
+ const existing=Array.from({length:20},(_,i)=>'/product/old'+String(i).padStart(3,'0'));const calls=[];
+ const result=await collectSitemap({existingPaths:existing,fetcher:fixtureFetch(['fresh001','fresh002'],{calls,broken:new Map([[existing[0],new Response('missing',{status:404})]])}),wait:async()=>{}});
+ assert.deepEqual(calls.slice(7,27),existing);assert.equal(result.requests,29);const urls=validateSitemap(result.xml).urls;assert(!urls.some(u=>u.endsWith(existing[0])));assert(urls.some(u=>u.endsWith('/product/fresh001')));assert.equal(result.products,20);
+});
+
+test('unchanged URL sets do not rewrite files or cause order-only proposals; partial outage preserves bytes',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'sitemap-test-'));const file=join(dir,'sitemap.xml');const previous=renderSitemap([...PUBLIC_PATHS,'/product/old001','/product/old002']);await writeFile(file,previous);
+ try{
+  let seen;
+  const result=await refreshSitemap(file,{collect:async options=>{seen=options.existingPaths;return {xml:renderSitemap([...PUBLIC_PATHS,'/product/old002','/product/old001'])};}});assert.deepEqual(seen,['/product/old001','/product/old002']);assert.equal(result.changed,false);assert.equal(await readFile(file,'utf8'),previous);
+  await assert.rejects(refreshSitemap(file,{fetcher:fixtureFetch(['old001','old002'],{broken:new Map([['/product/old002',new Response('outage',{status:503})]])}),wait:async()=>{}}),/Temporary product failure/);assert.equal(await readFile(file,'utf8'),previous);
+ }finally{await rm(dir,{recursive:true,force:true});}
 });
 
 test('an unavailable or malformed refresh preserves the previous complete sitemap, successful writes replace atomically',async()=>{

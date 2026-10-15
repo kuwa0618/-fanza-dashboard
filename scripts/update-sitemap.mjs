@@ -62,7 +62,8 @@ function candidates(groups) {
   for(let i=0;i<Math.max(...groups.map(g=>g.length),0);i++)for(const group of groups){const path=group[i];if(path&&!seen.has(path)){seen.add(path);result.push(path);}}
   return result;
 }
-export async function collectSitemap({fetcher=fetch,wait=ms=>new Promise(r=>setTimeout(r,ms)),interval=1200,onProgress=()=>{}}={}) {
+export async function collectSitemap({existingPaths=[],fetcher=fetch,wait=ms=>new Promise(r=>setTimeout(r,ms)),interval=1200,onProgress=()=>{}}={}) {
+  if(existingPaths.length>MAX_PRODUCTS || existingPaths.some(p=>!productPath(p)))throw Error('Invalid existing products');
   let requests=0;
   const get=async path=>{
     if(requests++)await wait(interval);
@@ -72,29 +73,41 @@ export async function collectSitemap({fetcher=fetch,wait=ms=>new Promise(r=>setT
   const groups=[];
   // Check all seven existing pages. Category HTML is reused for discovery (no extra list API calls).
   for(const path of PUBLIC_PATHS){const {response,html}=await get(path);if(!pageIsIndexable(response,html,path))throw Error(`Public page unavailable: ${path}`);if(['/sale','/vr','/new'].includes(path)){const links=detailLinks(html);if(!links.length)throw Error(`Catalog has no valid detail links: ${path}`);groups.push(links);}}
-  const products=[],skipped=[];
+  const discovered=candidates(groups);
+  const queue=[...new Set([...existingPaths,...discovered])].slice(0,MAX_DETAIL_CHECKS);
+  const verified=new Set(),skipped=[];
   let checked=0;
-  for(const path of candidates(groups).slice(0,MAX_DETAIL_CHECKS)){
-    if(products.length===MAX_PRODUCTS)break;
+  for(const path of queue){
     checked++;
-    try{const {response,html}=await get(path);if(validDetail(response,html,path)){products.push(path);onProgress({path,status:'verified'});}else{skipped.push(path);onProgress({path,status:'excluded'});}}catch{skipped.push(path);onProgress({path,status:'excluded'});}
+    let result;
+    try{result=await get(path);}catch{throw Error(`Temporary product failure: ${path}; keep the previous sitemap`);}
+    const {response,html}=result;
+    if(response.status===429 || response.status>=500 || response.status===401 || response.status===403)throw Error(`Temporary product failure: ${path} HTTP ${response.status}; keep the previous sitemap`);
+    if(validDetail(response,html,path)){verified.add(path);onProgress({path,status:'verified'});}else{skipped.push(path);onProgress({path,status:'excluded'});}
   }
+  // Prefer current category links; validated older pages fill any remaining places.
+  const products=[...new Set([...discovered,...existingPaths])].filter(p=>verified.has(p)).slice(0,MAX_PRODUCTS).sort();
   if(!products.length)throw Error('No verified products; keep the previous sitemap');
   const paths=[...PUBLIC_PATHS,...products];
   return {xml:renderSitemap(paths),products:products.length,checked,requests,skipped};
 }
 export async function refreshSitemap(file,{collect=collectSitemap,...options}={}) {
   // Write only a complete validated document, then rename atomically on the same filesystem.
-  const result=await collect(options);validateSitemap(result.xml);
+  const previous=await readFile(file,'utf8');
+  const old=validateSitemap(previous);
+  const existingPaths=old.urls.map(u=>new URL(u).pathname).filter(p=>productPath(p));
+  const result=await collect({...options,existingPaths});
+  const next=validateSitemap(result.xml);
+  if(next.urls.length===old.urls.length && next.urls.every(u=>old.urls.includes(u)))return {...result,xml:previous,changed:false};
   const temporary=new URL('.sitemap-'+process.pid+'.tmp',pathToFileURL(file));
   try{await writeFile(temporary,result.xml,{flag:'wx'});await rename(temporary,file);}catch(error){await unlink(temporary).catch(()=>{});throw error;}
-  return result;
+  return {...result,changed:true};
 }
 async function main() {
   const file=new URL('../sitemap.xml',import.meta.url).pathname;
   if(process.argv.includes('--check')){const result=validateSitemap(await readFile(file,'utf8'));console.log(`Valid sitemap: ${result.urls.length} URLs / ${result.products} products. No API calls.`);return;}
   const options={onProgress:({path,status})=>console.log(`${status}: ${path}`)};
   const result=process.argv.includes('--write')?await refreshSitemap(file,options):await collectSitemap(options);
-  console.log(`${process.argv.includes('--write')?'Saved':'Dry run'}: 7 public pages + ${result.products} products; ${result.requests} requests / ${result.checked} detail checks.`);
+  console.log(`${process.argv.includes('--write')?(result.changed?'Saved':'Unchanged'):'Dry run'}: 7 public pages + ${result.products} products; ${result.requests} requests / ${result.checked} detail checks.`);
 }
 if(process.argv[1] && import.meta.url===pathToFileURL(process.argv[1]).href)main().catch(error=>{console.error(`Sitemap refresh failed; existing file unchanged: ${error.message}`);process.exitCode=1;});
