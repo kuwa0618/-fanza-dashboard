@@ -48,10 +48,44 @@ test('404 and redirects are excluded, bounded to 30 detail checks; temporary fai
  await assert.rejects(collectSitemap({fetcher:async()=>new Response('unavailable',{status:503}),wait:async()=>{}}),/Public page unavailable/);
 });
 
-test('existing products are all revalidated before new candidates, with fresh works and validated older fallbacks',async()=>{
+test('existing products are all revalidated before new candidates and invalid slots are replenished',async()=>{
  const existing=Array.from({length:20},(_,i)=>'/product/old'+String(i).padStart(3,'0'));const calls=[];
  const result=await collectSitemap({existingPaths:existing,fetcher:fixtureFetch(['fresh001','fresh002'],{calls,broken:new Map([[existing[0],new Response('missing',{status:404})]])}),wait:async()=>{}});
  assert.deepEqual(calls.slice(7,27),existing);assert.equal(result.requests,29);const urls=validateSitemap(result.xml).urls;assert(!urls.some(u=>u.endsWith(existing[0])));assert(urls.some(u=>u.endsWith('/product/fresh001')));assert.equal(result.products,20);
+});
+
+test('healthy existing 20 products survive newly discovered candidates without rewriting the sitemap',async()=>{
+ const existing=Array.from({length:20},(_,i)=>'/product/old'+String(i).padStart(3,'0'));
+ const discovered=Array.from({length:30},(_,i)=>'fresh'+String(i).padStart(3,'0'));
+ const dir=await mkdtemp(join(tmpdir(),'sitemap-priority-'));const file=join(dir,'sitemap.xml');
+ const previous=renderSitemap([...PUBLIC_PATHS,...existing]);await writeFile(file,previous);
+ try{
+  const calls=[];const result=await refreshSitemap(file,{fetcher:fixtureFetch(discovered,{calls}),wait:async()=>{}});
+  assert.equal(result.changed,false);assert.equal(result.products,20);assert.equal(result.requests,37);
+  assert.deepEqual(calls.slice(7,27),existing);assert.equal(new Set(calls).size,calls.length);
+  assert.deepEqual(validateSitemap(result.xml).urls.map(u=>new URL(u).pathname),[...PUBLIC_PATHS,...existing]);
+  assert.equal(await readFile(file,'utf8'),previous);
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('only the invalid existing slot is filled, skipping invalid new candidates and retaining all other existing URLs',async()=>{
+ const existing=Array.from({length:20},(_,i)=>'/product/old'+String(i).padStart(3,'0'));
+ const invalid=existing[5];const broken=new Map([[invalid,new Response('missing',{status:404})],['/product/fresh001',new Response('missing',{status:404})]]);
+ const result=await collectSitemap({existingPaths:existing,fetcher:fixtureFetch(['fresh001','fresh002','fresh003'],{broken}),wait:async()=>{}});
+ const paths=validateSitemap(result.xml).urls.map(u=>new URL(u).pathname);
+ assert.equal(result.products,20);assert.deepEqual(paths.slice(0,7),PUBLIC_PATHS);
+ assert.deepEqual(paths.slice(7).sort(),[...existing.filter(p=>p!==invalid),'/product/fresh002'].sort());
+ assert(!paths.includes('/product/fresh003'));assert.deepEqual(result.skipped,[invalid,'/product/fresh001']);
+});
+
+test('zero healthy existing or replacement products leave the previous sitemap unchanged',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'sitemap-empty-'));const file=join(dir,'sitemap.xml');
+ const previous=renderSitemap([...PUBLIC_PATHS,'/product/old001']);await writeFile(file,previous);
+ try{
+  const broken=new Map(['/product/old001','/product/fresh001'].map(p=>[p,new Response('missing',{status:404})]));
+  await assert.rejects(refreshSitemap(file,{fetcher:fixtureFetch(['fresh001'],{broken}),wait:async()=>{}}),/No verified products/);
+  assert.equal(await readFile(file,'utf8'),previous);
+ }finally{await rm(dir,{recursive:true,force:true});}
 });
 
 test('unchanged URL sets do not rewrite files or cause order-only proposals; partial outage preserves bytes',async()=>{
