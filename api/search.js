@@ -1,3 +1,4 @@
+import { readCatalogFilters, catalogFilterPath, filterCatalogItems } from '../lib/catalog-filters.js';
 import { productPage } from "../lib/product-page.js";
 import { readFile } from "node:fs/promises";
 import { renderSeoPage, escapeHtml } from "../lib/seo.js";
@@ -5,24 +6,37 @@ import { renderSeoPage, escapeHtml } from "../lib/seo.js";
 import { catalogPages, catalogParams, selectCatalog, renderCatalogPage } from "../lib/catalog-pages.js";
 
 async function catalogPage(req, res, key) {
+  let filters;
+  try { filters = readCatalogFilters(req.query); }
+  catch {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("X-Robots-Tag", "noindex, follow");
+    return res.status(400).send("検索条件を確認してください。各項目は80文字以内で指定してください。");
+  }
   let items = [], unavailable = false;
   try {
     if (!process.env.DMM_API_ID || !process.env.DMM_AFFILIATE_ID) throw new Error("Missing catalog configuration");
     const params = catalogParams(key);
+    if (Object.keys(filters).length) {
+      // Narrow the same single upstream request, then verify exact metadata locally.
+      params.set("keyword", [...(key === 'vr' ? ['VR'] : []), ...Object.values(filters)].join(' '));
+      params.set("hits", "100");
+    }
     params.set("api_id", process.env.DMM_API_ID);
     params.set("affiliate_id", process.env.DMM_AFFILIATE_ID);
     const response = await fetch(`https://api.dmm.com/affiliate/v3/ItemList?${params}`, {signal:AbortSignal.timeout(5000)});
     const data = await response.json();
     if (!response.ok || data?.result?.status !== 200 || !Array.isArray(data.result.items)) throw new Error("Catalog unavailable");
-    items = selectCatalog(key, data.result.items);
+    items = selectCatalog(key, filterCatalogItems(data.result.items, filters));
   } catch { unavailable = true; console.error("Public catalog temporarily unavailable"); }
-  const canonical = `https://fanza-dashboard-omega.vercel.app${catalogPages[key].path}`;
+  const canonical = `https://fanza-dashboard-omega.vercel.app${catalogFilterPath(catalogPages[key].path, filters)}`;
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Cache-Control", unavailable ? "no-store" : "public, max-age=0, s-maxage=300, stale-while-revalidate=600");
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Link", `<${canonical}>; rel="canonical"`);
   if (unavailable) { res.setHeader("Retry-After", "60"); res.setHeader("X-Robots-Tag", "noindex, follow"); }
-  return res.status(unavailable ? 503 : 200).send(renderCatalogPage(key, items, {unavailable}));
+  if (Object.keys(filters).length) res.setHeader("X-Robots-Tag", "noindex, follow");
+  return res.status(unavailable ? 503 : 200).send(renderCatalogPage(key, items, {unavailable, filters}));
 }
 
 async function homepage(req, res) {
