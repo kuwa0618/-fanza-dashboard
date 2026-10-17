@@ -73,8 +73,12 @@ jobs:
         run: node --test tests/*.test.mjs
       - name: Revalidate existing URLs and refresh candidate sitemap
         timeout-minutes: 6
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
         run: npm run sitemap:refresh
       - name: Validate complete XML
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
         run: npm run sitemap:check
       - name: Propose only sitemap.xml changes (never merge)
         timeout-minutes: 2
@@ -83,3 +87,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPOSITORY: ${{ github.repository }}
           GH_BASE_SHA: ${{ github.sha }}
+          SITE_URL: ${{ vars.SITE_URL }}
