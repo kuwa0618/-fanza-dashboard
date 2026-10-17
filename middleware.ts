@@ -33,8 +33,12 @@ export default function middleware(request: Request) {
   }
   const category = ({ "/sale": "sale", "/vr": "vr", "/new": "new" } as Record<string, string>)[url.pathname];
   if (category) {
+    const publicFilters = new URL(url.href).searchParams;
+    for (const name of [...publicFilters.keys()]) {
+      if (!["actress", "genre", "maker"].includes(name)) publicFilters.delete(name);
+    }
     url.pathname = "/api/search";
-    url.search = "";
+    url.search = publicFilters.toString();
     url.searchParams.set("view", "catalog");
     url.searchParams.set("category", category);
     return rewrite(url);
