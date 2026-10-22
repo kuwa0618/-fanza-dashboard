@@ -1,7 +1,7 @@
 import { mkdir, rm, readFile, writeFile, copyFile } from 'node:fs/promises';
 
 export const publicFiles = [
-  'app.js', 'catalog.js', 'catalog-filters.js', 'styles.css', 'rankings.css',
+  'app.js', 'catalog.js', 'catalog-filters.js', 'analytics-context.js', 'styles.css', 'rankings.css',
   'contact.html', 'privacy.html', 'disclaimer.html', 'robots.txt', 'sitemap.xml',
   'ogp-v2-light.jpg', 'ogp-v2.png', 'ogp.png', 'ogp.png.png', 'IMG_7367.png',
 ];
@@ -29,3 +29,4 @@ export async function build() {
 }
 
 if (process.argv[1]?.endsWith('/build-netlify.mjs')) await build();
+

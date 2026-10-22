@@ -79,6 +79,7 @@ export default async function handler(req, res) {
   }
   if (req.query.view === "page" && ["GET", "HEAD"].includes(req.method)) return homepage(req, res);
   res.setHeader?.("X-Robots-Tag", "noindex, follow");
+  res.setHeader?.("Cache-Control", "no-store");
   if (req.method !== "GET") {
     return res.status(405).json({
       success: false,
@@ -147,6 +148,7 @@ if (mode === "sale") {
     const response = await fetch(
       `https://api.dmm.com/affiliate/v3/ItemList?${params.toString()}`,
       {
+        signal: AbortSignal.timeout(5000),
         headers: {
           Accept: "application/json",
         },
@@ -155,12 +157,11 @@ if (mode === "sale") {
 
     const data = await response.json();
   
-    if (!response.ok || data?.result?.status !== 200) {
-      return res.status(502).json({
+    if (!response.ok || data?.result?.status !== 200 || !Array.isArray(data?.result?.items)) {
+      res.setHeader?.("Retry-After", "60");
+      return res.status(503).json({
         success: false,
-        error:
-          data?.result?.message ||
-          "DMM商品情報APIから正常な応答を取得できませんでした。",
+        error: "現在、作品情報を取得できません。時間をおいて再度お試しください。",
 
       });
     }
@@ -211,11 +212,13 @@ if (mode === "sale") {
   　　recommendations: mode === "recommend" ? products.slice(0, 6) : [],
     });
   } catch (error) {
-    console.error("DMM API error:", error);
+    console.error("DMM catalog temporarily unavailable");
+    res.setHeader?.("Retry-After", "60");
 
-    return res.status(500).json({
+    return res.status(503).json({
       success: false,
       error: "作品データの取得中にエラーが発生しました。",
     });
   }
 }
+

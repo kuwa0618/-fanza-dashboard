@@ -1,5 +1,6 @@
 // Keep navigation synchronous; recording must never block opening FANZA.
 function trackFanzaClick(product, source = "ranking", linkType = "button") {
+  if (window.FanzaAnalytics?.isInternal) return;
   const contentId = product.id || product.content_id;
   if (!contentId || !product.url || product.url === "#") return;
 
@@ -703,7 +704,7 @@ async function fetchProducts(
 
     const response =
       await fetch(
-        `/api/search?${params.toString()}`
+        `/api/search?${params.toString()}`, { signal: AbortSignal.timeout(12000) }
       );
 
     const data =
@@ -757,13 +758,14 @@ localStorage.setItem(
 
     if (!append) {
       $("resultCount").textContent =
-        "0";
+        "—";
 
       showMessage(
-        `作品情報を取得できませんでした。<br><small>${error.message}</small>`
+        '作品情報を取得できませんでした。メンテナンスや通信の影響が考えられます。時間をおいて再度検索してください。'
       );
     } else {
-      alert(error.message);
+      updateLoadMoreButton(true);
+      alert("追加の作品情報を取得できませんでした。時間をおいて再度お試しください。");
     }
   } finally {
     if (requestId !== searchRequestId) return;
@@ -777,7 +779,7 @@ localStorage.setItem(
 async function fetchRecommendations() {
   try {
     const response =
-      await fetch("/api/search?mode=recommend");
+      await fetch("/api/search?mode=recommend", { signal: AbortSignal.timeout(12000) });
 
     const data =
       await response.json();
@@ -981,7 +983,7 @@ if (moreBtn) {
 }
 async function fetchSaleProducts() {
   try {
-    const response = await fetch("/api/search?mode=sale");
+    const response = await fetch("/api/search?mode=sale", { signal: AbortSignal.timeout(12000) });
 
     const data = await response.json();
 
@@ -1419,7 +1421,7 @@ let filtered = showHistoryOnly
     node.querySelector(
       ".badge"
     ).textContent =
-      product.tags[0] ||
+      (showHistoryOnly || showFavoritesOnly ? "保存済み" : product.tags[0]) ||
       product.genres[0] ||
       "作品";
 
@@ -1463,6 +1465,7 @@ let filtered = showHistoryOnly
       node.querySelector(".tags");
 
     product.tags
+      .filter(tag => !(showHistoryOnly || showFavoritesOnly) || tag !== "セール")
       .slice(0, 5)
       .forEach((tag) => {
         if (
@@ -1491,7 +1494,7 @@ let filtered = showHistoryOnly
       ".price"
     ).textContent =
       product.price > 0
-        ? `¥${product.price.toLocaleString()}〜`
+        ? `${showHistoryOnly || showFavoritesOnly ? "保存時の参考価格 " : ""}¥${product.price.toLocaleString()}〜`
         : "価格はFANZAで確認";
 
     node.querySelector(
@@ -1500,7 +1503,7 @@ let filtered = showHistoryOnly
       product.listPrice >
         product.price &&
       product.price > 0
-        ? `通常 ¥${product.listPrice.toLocaleString()}`
+        ? `${showHistoryOnly || showFavoritesOnly ? "保存時の" : ""}通常 ¥${product.listPrice.toLocaleString()}`
         : "";
     if (product.review) {
       node.querySelector(".rating").textContent += ` 評価 ${product.review.average} / 5（${product.review.count}件）`;
@@ -2130,3 +2133,4 @@ fetchProducts(false);
 fetchRecommendations();
 
 fetchSaleProducts();
+

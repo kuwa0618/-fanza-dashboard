@@ -10,7 +10,7 @@ const noop = () => {};
 function searchContext(fetch) {
   const elements = {keyword:{value:'VR'}, sortFilter:{value:'popular'}, searchBtn:{}, resultCount:{}};
   const messages = [];
-  const ctx = vm.createContext({fetch, URLSearchParams, console:{error:noop},
+  const ctx = vm.createContext({fetch, URLSearchParams, AbortSignal, console:{error:noop},
     $:id=>elements[id], asArray:v=>Array.isArray(v)?v:[], normalizeProduct:p=>p,
     localStorage:{setItem:noop}, updateFilters:noop, render:noop, updateLoadMoreButton:noop,
     showMessage:message=>messages.push(message), renderRecommendations:message=>messages.push(message),
@@ -81,7 +81,7 @@ test('hash shortcuts and Back/Forward preserve filters, while actress query navi
 
 test('ranking titles link to valid actual IDs, escape titles and make no unmeasured growth claim',async()=>{
   const list={innerHTML:''};let invalid=false;
-  const ctx=vm.createContext({document:{querySelectorAll:()=>[],getElementById:()=>list},encodeURIComponent,console,
+  const ctx=vm.createContext({document:{querySelectorAll:()=>[],getElementById:()=>list},encodeURIComponent,AbortSignal,console,
     fetch:async url=>({json:async()=>url.startsWith('/api/rankings')?{rankings:[{content_id:'actual_001',clicks:3,title:'sample'}]}:{products:[{content_id:invalid?'bad/id':'actual_001',title:'Title <script> & "',affiliateURL:'https://example.com/',imageURL:{large:'https://example.com/cover.jpg'},prices:{price:'500'}}]}})});
   vm.runInContext(html.slice(html.indexOf('let currentPeriod ='),html.indexOf('function renderSimpleRanking')),ctx);
   await ctx.loadRankings();assert.match(list.innerHTML,/href="\/product\/actual_001"/);assert(list.innerHTML.includes('Title &lt;script&gt; &amp; &quot;'));
@@ -90,3 +90,4 @@ test('ranking titles link to valid actual IDs, escape titles and make no unmeasu
   invalid=true;await ctx.loadRankings();assert(!list.innerHTML.includes('href="/product/'));
   for(const [id,label]of [['genreFilter','ジャンルで絞り込む'],['makerFilter','メーカーで絞り込む'],['sortFilter','作品の並び順']])assert(html.includes(`id="${id}" aria-label="${label}"`));
 });
+
