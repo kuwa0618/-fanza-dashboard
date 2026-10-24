@@ -19,6 +19,29 @@ const handlers = {
   'genre-rankings': genreRankings, post, posts, insights, stats,
 };
 const privateApis = new Set(['post', 'posts', 'insights', 'stats']);
+const cachedPublicApis = new Set([
+  'search', 'rankings', 'favorite-rankings', 'actress-rankings', 'maker-rankings', 'genre-rankings',
+]);
+
+function setCdnCache(request, headers, status) {
+  // Keep browser caching and public CDN caching separate. Never cache writes,
+  // errors, authenticated responses, or a response that creates a cookie.
+  headers.set('Netlify-CDN-Cache-Control', 'no-store');
+  if (request.method !== 'GET' || status !== 200 || request.headers.has('authorization') ||
+      headers.has('set-cookie') || /(?:^|,)\s*private\b/i.test(headers.get('Cache-Control') || '')) return;
+  const path = new URL(request.url).pathname;
+  const api = path.match(/^\/api\/([a-z-]+)\/?$/)?.[1];
+  if (cachedPublicApis.has(api) && /^application\/json\b/i.test(headers.get('Content-Type') || '')) {
+    // Full URL queries remain in the cache key, including keyword, offset,
+    // sort and period. Public data can be up to 60 seconds old.
+    headers.set('Netlify-CDN-Cache-Control', 'public, durable, max-age=60');
+    return;
+  }
+  const cache = headers.get('Cache-Control') || '';
+  if (!api && /(?:^|,)\s*public\b/i.test(cache) && !/\bno-store\b/i.test(cache) && /\bs-maxage=\d+\b/.test(cache)) {
+    headers.set('Netlify-CDN-Cache-Control', cache + ', durable');
+  }
+}
 const privatePages = {
   analysis: 'analysis.html', dashboard: 'dashboard.html',
   'post-form': 'post-form.html', 'click-analysis': 'click-analysis.html',
@@ -78,6 +101,7 @@ async function invoke(handler, request, query, extraHeaders, site) {
   // Existing renderers retain their Vercel defaults; only the new host adapter changes metadata.
   output = output.replaceAll(oldOrigin, site);
   for (const [key, value] of headers) if (value.includes(oldOrigin)) headers.set(key, value.replaceAll(oldOrigin, site));
+  setCdnCache(request, headers, status);
   return new Response(request.method === 'HEAD' || status === 204 ? null : output, { status, headers });
 }
 
@@ -135,3 +159,4 @@ export const config = {
     '/click-analysis', '/click-analysis/*', '/click-analysis.html', '/click-analysis.html/*',
   ],
 };
+
