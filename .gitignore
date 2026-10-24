@@ -4,3 +4,8 @@ node_modules/
 .vercel/
 dist-netlify/
 .netlify/
+dist-cloudflare/
+.cf-dry-run/
+.wrangler/
+.dev.vars
+.dev.vars.*

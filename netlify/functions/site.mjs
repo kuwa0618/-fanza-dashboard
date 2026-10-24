@@ -77,7 +77,7 @@ function authorize(request) {
   }
 }
 
-async function invoke(handler, request, query, extraHeaders, site) {
+async function invoke(handler, request, query, extraHeaders, site, readTemplate) {
   let body;
   if (!['GET', 'HEAD'].includes(request.method)) {
     const raw = await request.text();
@@ -96,7 +96,7 @@ async function invoke(handler, request, query, extraHeaders, site) {
     send(value) { output = String(value ?? ''); sent = true; return this; },
     end(value) { return this.send(value); },
   };
-  await handler({ method: request.method, query, body, headers: Object.fromEntries(request.headers), url: request.url }, res);
+  await handler({ method: request.method, query, body, headers: Object.fromEntries(request.headers), url: request.url, readTemplate }, res);
   if (!sent) throw new Error('Handler did not send a response');
   // Existing renderers retain their Vercel defaults; only the new host adapter changes metadata.
   output = output.replaceAll(oldOrigin, site);
@@ -105,7 +105,8 @@ async function invoke(handler, request, query, extraHeaders, site) {
   return new Response(request.method === 'HEAD' || status === 204 ? null : output, { status, headers });
 }
 
-export default async function handler(request) {
+export function createSiteHandler({ readTemplate = name => readFile(`${process.cwd()}/${name}`, 'utf8') } = {}) {
+ return async function handler(request) {
   try {
     const site = origin();
     const url = new URL(request.url);
@@ -121,7 +122,7 @@ export default async function handler(request) {
     }
     if (pageMatch) {
       if (!['GET', 'HEAD'].includes(request.method)) return new Response(null, { status: 405, headers: { ...adminHeaders, Allow: 'GET, HEAD' } });
-      const html = await readFile(`${process.cwd()}/${privatePages[pageMatch[1]]}`, 'utf8');
+      const html = await readTemplate(privatePages[pageMatch[1]]);
       return new Response(request.method === 'HEAD' ? null : html.replaceAll(oldOrigin, site), {
         headers: { ...adminHeaders, 'Content-Type': 'text/html; charset=utf-8' },
       });
@@ -141,13 +142,16 @@ export default async function handler(request) {
     } else if (apiMatch && Object.hasOwn(handlers, apiMatch[1])) selected = handlers[apiMatch[1]];
     else return new Response('Not found', { status: 404 });
     if (!apiMatch && !['GET', 'HEAD'].includes(request.method)) return new Response(null, { status: 405, headers: { Allow: 'GET, HEAD' } });
-    return await invoke(selected, request, query, privateApis.has(apiMatch?.[1]) ? adminHeaders : {}, site);
+    return await invoke(selected, request, query, privateApis.has(apiMatch?.[1]) ? adminHeaders : {}, site, readTemplate);
   } catch {
     // Never return environment values or upstream error details.
     console.error('Hosting adapter request failed');
     return new Response('一時的に利用できません。', { status: 503, headers: { 'Cache-Control': 'no-store' } });
   }
+ };
 }
+
+export default createSiteHandler();
 
 export const config = {
   path: [
