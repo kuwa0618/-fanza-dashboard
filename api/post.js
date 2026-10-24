@@ -8,6 +8,7 @@ export default async function handler(req, res) {
       `${process.env.SUPABASE_URL}/rest/v1/post_logs`,
       {
         method: "POST",
+        signal: AbortSignal.timeout(10000),
         headers: {
           apikey: process.env.SUPABASE_ANON_KEY,
           Authorization: `Bearer ${process.env.SUPABASE_ANON_KEY}`,
@@ -32,3 +33,4 @@ export default async function handler(req, res) {
     });
   }
 }
+

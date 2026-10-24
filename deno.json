@@ -1,0 +1,10 @@
+{
+  "nodeModulesDir": "none",
+  "tasks": {
+    "start": "deno run --allow-env --allow-read --allow-net deno/server.mjs",
+    "test:recovery": "deno test --allow-env --allow-read scripts/test-deno.mjs"
+  },
+  "deploy": {
+    "runtime": { "type": "dynamic", "entrypoint": "deno/server.mjs", "cwd": "." }
+  }
+}

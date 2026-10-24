@@ -5,9 +5,14 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
-    "typescript": "5.9.3"
+    "miniflare": "4.20260730.0",
+    "typescript": "5.9.3",
+    "wrangler": "4.152.0"
   },
   "scripts": {
+    "cloudflare:build": "node scripts/build-cloudflare.mjs",
+    "cloudflare:dry-run": "wrangler deploy --dry-run --outdir .cf-dry-run",
+    "cloudflare:test": "node scripts/test-cloudflare.mjs",
     "sitemap:check": "node scripts/update-sitemap.mjs --check",
     "sitemap:refresh": "node scripts/update-sitemap.mjs --write"
   }

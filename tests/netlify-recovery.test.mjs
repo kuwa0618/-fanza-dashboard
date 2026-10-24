@@ -111,3 +111,69 @@ test('publish output contains only allowlisted assets and no admin/server/config
   assert.throws(() => siteOrigin('https://recovery.example/path'));
   assert.throws(() => siteOrigin('https://user:password@recovery.example'));
 });
+
+test('public search and rankings opt into durable CDN caching without changing query results', async () => {
+  configured();
+  const seen = [];
+  mock.method(globalThis, 'fetch', async url => {
+    seen.push(new URL(url));
+    return String(url).includes('api.dmm.com')
+      ? Response.json({ result: { status: 200, items: [work] } }) : Response.json([]);
+  });
+  for (const keyword of ['first', 'second']) {
+    const response = await site(request('/api/search?keyword=' + keyword + '&offset=21&sort=rank'));
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).keyword, keyword);
+    assert.equal(response.headers.get('Netlify-CDN-Cache-Control'), 'public, durable, max-age=60');
+    assert.equal(response.headers.get('Cache-Control'), 'no-store');
+    assert.equal(seen.at(-1).searchParams.get('keyword'), keyword);
+    assert.equal(seen.at(-1).searchParams.get('offset'), '21');
+  }
+  for (const name of ['rankings', 'favorite-rankings', 'actress-rankings', 'maker-rankings', 'genre-rankings']) {
+    const response = await site(request('/api/' + name + '?period=month'));
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get('Netlify-CDN-Cache-Control'), /durable/);
+  }
+});
+
+test('CDN cache excludes private pages, authenticated requests, writes and upstream errors', async () => {
+  configured();
+  mock.method(globalThis, 'fetch', async url => String(url).includes('api.dmm.com')
+    ? Response.json({ result: { status: 200, items: [work] } }) : Response.json([], { status: 201 }));
+  for (const path of ['/api/click', '/api/favorite']) {
+    const response = await site(request(path, { method: 'POST', body: JSON.stringify({ content_id: 'test001', title: '検証' }) }));
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('Netlify-CDN-Cache-Control'), 'no-store');
+  }
+  for (const path of ['/dashboard', '/api/search?mode=recommend']) {
+    const response = await site(request(path, { headers: auth() }));
+    assert.equal(response.status, 200);
+    assert.doesNotMatch(response.headers.get('Netlify-CDN-Cache-Control') || '', /public|durable/);
+    assert.match(response.headers.get('Cache-Control'), /no-store/);
+  }
+  mock.restoreAll();
+  mock.method(globalThis, 'fetch', async () => new Response('maintenance', { status: 503 }));
+  for (const path of ['/api/search?mode=recommend', '/sale', '/product/test001', '/api/rankings']) {
+    const response = await site(request(path));
+    assert(response.status >= 500, path);
+    assert.equal(response.headers.get('Netlify-CDN-Cache-Control'), 'no-store', path);
+  }
+});
+
+test('public HTML gains durable caching while Twitterbot stays outside shared caches', async () => {
+  configured();
+  mock.method(globalThis, 'fetch', async () => Response.json({ result: { status: 200, items: [work] } }));
+  for (const path of ['/', '/sale', '/new', '/vr', '/product/test001']) {
+    const response = await site(request(path));
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get('Netlify-CDN-Cache-Control'), /s-maxage=300.*durable/);
+  }
+  const bot = await site(request('/', { headers: { 'User-Agent': 'Twitterbot/1.0' } }));
+  assert.equal(bot.status, 200);
+  assert.equal(bot.headers.get('Vary'), 'User-Agent');
+  assert.equal(bot.headers.get('Netlify-CDN-Cache-Control'), 'no-store');
+  const head = await site(request('/', { method: 'HEAD' }));
+  assert.equal(await head.text(), '');
+  assert.equal(head.headers.get('Netlify-CDN-Cache-Control'), 'no-store');
+});
+
