@@ -12,6 +12,7 @@ export default async function handler(req, res) {
         "&order=posted_at.desc" +
         "&limit=1000",
       {
+        signal: AbortSignal.timeout(10000),
         headers: {
           apikey: process.env.SUPABASE_ANON_KEY,
           Authorization: `Bearer ${process.env.SUPABASE_ANON_KEY}`,
@@ -170,3 +171,4 @@ export default async function handler(req, res) {
     });
   }
 }
+

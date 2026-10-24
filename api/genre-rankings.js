@@ -53,6 +53,7 @@ export default async function handler(request, response) {
     const supabaseResponse = await fetch(
       `${supabaseUrl}/rest/v1/click_logs?${params.toString()}`,
       {
+        signal: AbortSignal.timeout(10000),
         headers: {
           apikey: supabaseKey,
           Authorization: `Bearer ${supabaseKey}`,
@@ -146,3 +147,4 @@ export default async function handler(request, response) {
     });
   }
 }
+
