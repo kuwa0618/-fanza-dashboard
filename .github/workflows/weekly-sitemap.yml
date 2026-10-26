@@ -12,6 +12,9 @@ on:
       - 'tests/*sitemap*.test.mjs'
       - 'sitemap.xml'
 
+env:
+  SITEMAP_SITE_URL: https://fanza-works-navi-recovery.orange-rose-6867.chatgpt.site
+
 permissions:
   contents: read
 
@@ -41,10 +44,12 @@ jobs:
       - name: Run regression and PR publisher safety tests
         run: node --test tests/*.test.mjs
       - name: Validate existing snapshot offline
-        run: npm run sitemap:check
+        run: npm run sitemap:check -- --stored
       - name: Verify live refresh on the implementation PR (read only, no publication)
-        if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'weekly-sitemap-automation'
+        if: github.event.pull_request.head.repo.full_name == github.repository && (github.event.pull_request.head.ref == 'weekly-sitemap-automation' || github.event.pull_request.head.ref == 'fix/sitemap-origin-migration')
         timeout-minutes: 6
+        env:
+          SITE_URL: ${{ env.SITEMAP_SITE_URL }}
         run: |
           npm run sitemap:refresh
           npm run sitemap:check
@@ -74,11 +79,11 @@ jobs:
       - name: Revalidate existing URLs and refresh candidate sitemap
         timeout-minutes: 6
         env:
-          SITE_URL: ${{ vars.SITE_URL }}
+          SITE_URL: ${{ env.SITEMAP_SITE_URL }}
         run: npm run sitemap:refresh
       - name: Validate complete XML
         env:
-          SITE_URL: ${{ vars.SITE_URL }}
+          SITE_URL: ${{ env.SITEMAP_SITE_URL }}
         run: npm run sitemap:check
       - name: Propose only sitemap.xml changes (never merge)
         timeout-minutes: 2
@@ -87,4 +92,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPOSITORY: ${{ github.repository }}
           GH_BASE_SHA: ${{ github.sha }}
-          SITE_URL: ${{ vars.SITE_URL }}
+          SITE_URL: ${{ env.SITEMAP_SITE_URL }}
