@@ -45,3 +45,11 @@ git diff -- sitemap.xml
 - 価格・画像・抽出条件・計測・GA4・年齢確認・管理認証のコードは変更しない。
 
 参考: https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap?hl=ja
+
+## 2026-10-26 URL移転後の修正
+
+週次処理の対象は、公開復旧先 `https://fanza-works-navi-recovery.orange-rose-6867.chatgpt.site` に固定する。停止中のNetlifyを指すリポジトリ変数 `SITE_URL` は、このワークフローでは参照しない。次に移転する際はワークフローの `SITEMAP_SITE_URL` も変更する。
+
+保存済みXMLに限り、既知のVercel・Netlify・公開復旧先のいずれか1ホストを認める。混在ホスト・外部ホスト・不正なパスは拒否する。旧URLはパスを取り出すためだけに読み、更新先で全公開ページ・作品を従来通り検証する。失敗時は元のXMLをそのまま維持する。生成結果とPRへ書くXMLは、常に更新先ホストの厳密検証を通す。
+
+PRのオフライン検査は `npm run sitemap:check -- --stored` で保存済みホストを検査する。実サイト再検証後の検査は通常の `sitemap:check` で更新先との一致を検査する。自動マージ・自動デプロイは追加しない。GitHub側のXML更新をマージしても、別リポジトリのSitesへ自動配信されるわけではないため、公開復旧先の配信反映は別途必要。
