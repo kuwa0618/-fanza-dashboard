@@ -1,0 +1,11 @@
+[build]
+  command = "node scripts/build-netlify.mjs"
+  publish = "dist-netlify"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[functions]
+  node_bundler = "esbuild"
+  included_files = ["index.html", "analysis.html", "dashboard.html", "post-form.html", "click-analysis.html"]

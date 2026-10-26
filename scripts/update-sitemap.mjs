@@ -46,15 +46,36 @@ export function renderSitemap(paths) {
   const xml=`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${unique.map(p=>`  <url><loc>${new URL(p,SITE_URL).href}</loc></url>`).join('\n')}\n</urlset>\n`;
   validateSitemap(xml);return xml;
 }
-export function validateSitemap(xml) {
+function validateForOrigin(xml,origin) {
   if(!/^<\?xml version="1\.0" encoding="UTF-8"\?>\s*<urlset xmlns="http:\/\/www.sitemaps.org\/schemas\/sitemap\/0\.9">[\s\S]*<\/urlset>\s*$/.test(xml))throw Error('Invalid XML envelope');
   const urls=[...xml.matchAll(/<url><loc>([^<]+)<\/loc><\/url>/g)].map(m=>m[1]);
   if(urls.length<7 || urls.length>7+MAX_PRODUCTS || new Set(urls).size!==urls.length || /<lastmod\b|<changefreq\b|<priority\b/i.test(xml))throw Error('Invalid sitemap metadata or count');
   const body=xml.replace(/^<\?xml[^>]*>\s*<urlset[^>]*>|<\/urlset>\s*$/g,'').replace(/\s*<url><loc>[^<]+<\/loc><\/url>\s*/g,'');
   if(body.trim())throw Error('Unexpected sitemap XML');
-  const paths=urls.map(value=>{const u=new URL(value);if(value!==new URL(u.pathname,SITE_URL).href || u.origin!==ORIGIN || u.search || u.hash || (!PUBLIC_PATHS.includes(u.pathname)&&!productPath(value)))throw Error('Invalid sitemap URL');return u.pathname;});
+  const paths=urls.map(value=>{
+    const u=new URL(value);
+    const id=u.pathname.match(/^\/product\/([^/]+)$/)?.[1];
+    const validPath=PUBLIC_PATHS.includes(u.pathname) || (id && PRODUCT_ID.test(id));
+    if(value!==new URL(u.pathname,origin).href || u.origin!==origin || u.username || u.password || u.search || u.hash || !validPath)throw Error('Invalid sitemap URL');
+    return u.pathname;
+  });
   if(!PUBLIC_PATHS.every(p=>paths.includes(p)))throw Error('Existing public pages must remain');
-  return {urls,products:paths.filter(p=>productPath(p)).length};
+  return {urls,products:paths.filter(p=>p.startsWith('/product/')).length};
+}
+// Only stored snapshots may use a known former host. New output must use SITE_URL.
+export function validateSitemap(xml) { return validateForOrigin(xml,ORIGIN); }
+const STORED_ORIGINS=new Set([
+  ORIGIN,
+  'https://fanza-dashboard-omega.vercel.app',
+  'https://fanza-works-navi.netlify.app',
+  'https://fanza-works-navi-recovery.orange-rose-6867.chatgpt.site',
+]);
+export function validateStoredSitemap(xml) {
+  const first=xml.match(/<url><loc>([^<]+)<\/loc><\/url>/)?.[1];
+  if(!first)throw Error('Missing stored sitemap URL');
+  const origin=new URL(first).origin;
+  if(!STORED_ORIGINS.has(origin))throw Error('Unrecognized stored sitemap origin');
+  return validateForOrigin(xml,origin);
 }
 // Round-robin discovery gives sale, VR and new releases a place without duplicate checks.
 function candidates(groups) {
@@ -85,8 +106,8 @@ export async function collectSitemap({existingPaths=[],fetcher=fetch,wait=ms=>ne
     if(response.status===429 || response.status>=500 || response.status===401 || response.status===403)throw Error(`Temporary product failure: ${path} HTTP ${response.status}; keep the previous sitemap`);
     if(validDetail(response,html,path)){verified.add(path);onProgress({path,status:'verified'});}else{skipped.push(path);onProgress({path,status:'excluded'});}
   }
-  // Prefer current category links; validated older pages fill any remaining places.
-  const products=[...new Set([...discovered,...existingPaths])].filter(p=>verified.has(p)).slice(0,MAX_PRODUCTS).sort();
+  // Retain verified existing URLs; new verified candidates only fill vacant places.
+  const products=[...new Set([...existingPaths,...discovered])].filter(p=>verified.has(p)).slice(0,MAX_PRODUCTS).sort();
   if(!products.length)throw Error('No verified products; keep the previous sitemap');
   const paths=[...PUBLIC_PATHS,...products];
   return {xml:renderSitemap(paths),products:products.length,checked,requests,skipped};
@@ -94,7 +115,7 @@ export async function collectSitemap({existingPaths=[],fetcher=fetch,wait=ms=>ne
 export async function refreshSitemap(file,{collect=collectSitemap,...options}={}) {
   // Write only a complete validated document, then rename atomically on the same filesystem.
   const previous=await readFile(file,'utf8');
-  const old=validateSitemap(previous);
+  const old=validateStoredSitemap(previous);
   const existingPaths=old.urls.map(u=>new URL(u).pathname).filter(p=>productPath(p));
   const result=await collect({...options,existingPaths});
   const next=validateSitemap(result.xml);
@@ -105,7 +126,7 @@ export async function refreshSitemap(file,{collect=collectSitemap,...options}={}
 }
 async function main() {
   const file=new URL('../sitemap.xml',import.meta.url).pathname;
-  if(process.argv.includes('--check')){const result=validateSitemap(await readFile(file,'utf8'));console.log(`Valid sitemap: ${result.urls.length} URLs / ${result.products} products. No API calls.`);return;}
+  if(process.argv.includes('--check')){const result=(process.argv.includes('--stored')?validateStoredSitemap:validateSitemap)(await readFile(file,'utf8'));console.log(`Valid sitemap: ${result.urls.length} URLs / ${result.products} products. No API calls.`);return;}
   const options={onProgress:({path,status})=>console.log(`${status}: ${path}`)};
   const result=process.argv.includes('--write')?await refreshSitemap(file,options):await collectSitemap(options);
   console.log(`${process.argv.includes('--write')?(result.changed?'Saved':'Unchanged'):'Dry run'}: 7 public pages + ${result.products} products; ${result.requests} requests / ${result.checked} detail checks.`);

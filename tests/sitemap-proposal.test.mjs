@@ -45,3 +45,12 @@ test('workflow is weekly and main-only, bounded, pinned, least-scoped and contai
  const workflow=await readFile(new URL('../.github/workflows/weekly-sitemap.yml',import.meta.url),'utf8');assert(workflow.includes("cron: '17 21 * * 0'"));assert(workflow.includes('workflow_dispatch:'));assert(workflow.includes("github.ref == 'refs/heads/main'"));assert(workflow.includes("github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'"));assert(workflow.includes('timeout-minutes: 10'));assert(workflow.includes('cancel-in-progress: false'));assert(workflow.includes('persist-credentials: false'));assert(workflow.includes('--ignore-scripts'));assert.equal((workflow.match(/uses: [^\n]+@[a-f0-9]{40}/g)||[]).length,4);assert.equal((workflow.match(/GH_TOKEN:/g)||[]).length,1);assert(!/pull_request_target:|auto-merge|gh pr merge|vercel deploy|secrets\./.test(workflow));
  const validation=workflow.split('  validate:')[1].split('  propose:')[0];assert(!/contents: write|pull-requests: write|GH_TOKEN/.test(validation));assert(!validation.includes('node scripts/propose-sitemap.mjs'));
 });
+
+test('a verified migrated snapshot can be proposed against an old-host base and pending bot branch',async()=>{
+ const old=previous.replaceAll(new URL((await import('../lib/seo.js')).SITE_URL).origin,'https://fanza-works-navi.netlify.app');
+ const f=fixture({branch:true,open:true,content:old});
+ assert.equal((await proposeSitemap({...options,previous:old,...f})).status,'updated');
+ assert(!f.calls.some(c=>/merge|review|auto_merge/.test(c.path)));
+ const bad=fixture();await assert.rejects(proposeSitemap({...options,xml:old,...bad}),/Invalid sitemap URL/);
+ assert.equal(bad.calls.length,0);
+});

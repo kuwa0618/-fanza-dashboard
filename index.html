@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="ja">
 <head>
+  <script src="/analytics-context.js"></script>
   <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-RK6R5HVKZC"></script>
 <script>
@@ -18,14 +19,14 @@
   <meta property="og:title" content="FANZA作品ナビ｜セール・人気作品を出演者やジャンルから検索">
 <meta property="og:description" content="FANZAの作品を出演者・メーカー・ジャンルで検索。セール作品、人気ランキング、実レビューによる高評価作品を探せます。お気に入りと閲覧履歴で気になる作品を保存。18歳以上向け。">
 <meta property="og:type" content="website">
-<meta property="og:image" content="https://fanza-dashboard-omega.vercel.app/ogp-v2.png">
+<meta property="og:image" content="https://fanza-dashboard-omega.vercel.app/ogp-v2-light.jpg">
 <meta property="og:url" content="https://fanza-dashboard-omega.vercel.app/">
 <meta property="og:site_name" content="FANZA作品ナビ">
 
  <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="FANZA作品ナビ｜セール・人気作品を出演者やジャンルから検索">
 <meta name="twitter:description" content="FANZAの作品を出演者・メーカー・ジャンルで検索。セール作品、人気ランキング、実レビューによる高評価作品を探せます。お気に入りと閲覧履歴で気になる作品を保存。18歳以上向け。">
-<meta name="twitter:image" content="https://fanza-dashboard-omega.vercel.app/ogp-v2.png">
+<meta name="twitter:image" content="https://fanza-dashboard-omega.vercel.app/ogp-v2-light.jpg">
   
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="rankings.css">
@@ -73,6 +74,15 @@
       
 </div>
   </header>
+
+  <section id="partner-sites" class="browse-content" aria-labelledby="partnerSitesHeading">
+    <h2 id="partnerSitesHeading">相互リンク</h2>
+    <article class="search-panel">
+      <h3><a href="https://adultnaonnanoko.com/" target="_blank" rel="nofollow noopener noreferrer">アダルトな女の子</a></h3>
+      <p style="margin-bottom:0;line-height:1.8;overflow-wrap:anywhere;">世の中の人が楽しめるようなエロ動画レビュー発信を新作から旧作まで幅広くしていきたいと思います！</p>
+    </article>
+  </section>
+
 
 
  <section id="recommendArea" style="margin-top:40px;">
@@ -187,19 +197,19 @@
   </button>
 </div>
       <div class="filters">
-        <select id="genreFilter">
+        <select id="genreFilter" aria-label="ジャンルで絞り込む">
           <option value="">すべてのジャンル</option>
           <option value="ドラマ">ドラマ</option>
           <option value="恋愛">恋愛</option>
           <option value="企画">企画</option>
         </select>
-        <select id="makerFilter">
+        <select id="makerFilter" aria-label="メーカーで絞り込む">
           <option value="">すべてのメーカー</option>
           <option value="Studio A">Studio A</option>
           <option value="Studio B">Studio B</option>
           <option value="Studio C">Studio C</option>
         </select>
-        <select id="sortFilter">
+        <select id="sortFilter" aria-label="作品の並び順">
           <option value="new">新着順</option>
           <option value="popular">人気順</option>
           <option value="priceLow">価格が安い順</option>
@@ -310,11 +320,13 @@ async function loadRankings(period = "week") {
     btn.classList.toggle("is-active", btn.dataset.period === period);
   });
 
-  const res = await fetch(`/api/rankings?period=${period}`);
+  try {
+  const res = await fetch(`/api/rankings?period=${period}`, { signal: AbortSignal.timeout(12000) });
   const data = await res.json();
 
   const rankingList = document.getElementById("rankingList");
 
+  if (res.ok === false || !Array.isArray(data.rankings)) throw new Error("Ranking unavailable");
   if (!data.rankings.length) {
     rankingList.innerHTML = "<p>まだランキングデータがありません。</p>";
     return;
@@ -324,11 +336,11 @@ async function loadRankings(period = "week") {
   data.rankings.slice(0, 20).map(async (item) => {
     try {
       const productResponse = await fetch(
-        `/api/search?keyword=${encodeURIComponent(item.title)}&hits=1`
+        `/api/search?keyword=${encodeURIComponent(item.title)}&hits=1`, { signal: AbortSignal.timeout(12000) }
       );
 
       const productData = await productResponse.json();
-      const product = productData.products?.[0] || null;
+      const product = productResponse.ok === false ? null : productData.products?.[0] || null;
 
       return {
         ...item,
@@ -356,6 +368,10 @@ const visibleRankings = rankingProducts
   )
   .slice(0, 4);
   
+if (!visibleRankings.length) {
+  rankingList.innerHTML = '<p role="status">ランキングの作品情報を取得できませんでした。時間をおいて再読み込みしてください。</p>';
+  return;
+}
 rankingList.innerHTML = visibleRankings
   .map((item, index) => {
     const product = item.product;
@@ -365,6 +381,10 @@ rankingList.innerHTML = visibleRankings
     );
 
     const title = escapeRankingText(rawTitle);
+    const contentId = String(product?.content_id || product?.product_id || item.content_id || "");
+    const detailTitle = /^[a-zA-Z0-9_]{3,80}$/.test(contentId)
+      ? `<a href="/product/${encodeURIComponent(contentId)}">${title}</a>`
+      : title;
     const actress = escapeRankingText(item.actress || "");
 
     const image =
@@ -378,7 +398,7 @@ rankingList.innerHTML = visibleRankings
       "";
 
    const displayPrice = price
-  ? String(price).replace(/[^\d]/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+  ? formatRankingPrice(price)
   : ""; 
     
     const url =
@@ -395,7 +415,7 @@ rankingList.innerHTML = visibleRankings
       index === 0
         ? `<div class="ranking-hot-badge">🏆 人気No.1</div>`
         : index < 3
-          ? `<div class="ranking-hot-badge">🔥 急上昇</div>`
+          ? `<div class="ranking-hot-badge">人気${index + 1}位</div>`
           : ""
     } 
 
@@ -422,7 +442,7 @@ rankingList.innerHTML = visibleRankings
         </div>
 
         <div class="ranking-card-body">
-          <h3>${title}</h3>
+          <h3>${detailTitle}</h3>
 
           ${
             actress
@@ -460,8 +480,18 @@ rankingList.innerHTML = visibleRankings
     `;
   })
   .join("");
+  } catch {
+    document.getElementById("rankingList").innerHTML = '<p role="status">ランキングを取得できませんでした。時間をおいて再読み込みしてください。</p>';
+  }
 }
-    
+
+function formatRankingPrice(value) {
+  const raw = String(value ?? "").trim().replaceAll(",", "");
+  if (!/^\d+(?:[~〜～])?$/.test(raw)) return "";
+  const amount = Number(raw.replace(/[~〜～]/g, ""));
+  return Number.isSafeInteger(amount) && amount > 0 ? amount.toLocaleString("ja-JP") : "";
+}
+
 function escapeRankingText(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -741,3 +771,4 @@ document.addEventListener("auxclick", trackRankingActivation);
 </footer>
 </body>
 </html>
+

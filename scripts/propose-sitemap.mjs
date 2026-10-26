@@ -2,7 +2,7 @@ import {readFile,appendFile} from 'node:fs/promises';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {pathToFileURL,fileURLToPath} from 'node:url';
-import {validateSitemap} from './update-sitemap.mjs';
+import {validateSitemap,validateStoredSitemap} from './update-sitemap.mjs';
 
 export const REPOSITORY='kuwa0618/-fanza-dashboard';
 export const UPDATE_BRANCH='automation/verified-sitemap';
@@ -11,7 +11,7 @@ const ROOT=fileURLToPath(new URL('../',import.meta.url));
 const sameUrls=(a,b)=>a.length===b.length && a.every(u=>b.includes(u));
 
 export async function proposeSitemap({xml,previous,repository,baseSha,token,fetcher=fetch}) {
-  const next=validateSitemap(xml),old=validateSitemap(previous);
+  const next=validateSitemap(xml),old=validateStoredSitemap(previous);
   if(repository!==REPOSITORY || !/^[a-f0-9]{40}$/.test(baseSha||''))throw Error('Unexpected repository or base commit');
   if(sameUrls(next.urls,old.urls))return {status:'unchanged'};
   if(!token)throw Error('GitHub token is required for a changed sitemap');
@@ -34,7 +34,7 @@ export async function proposeSitemap({xml,previous,repository,baseSha,token,fetc
     if(commit.message?.split('\n')[0]!==COMMIT)throw Error('Update branch contains human changes; do not overwrite');
     const content=await api('/contents/sitemap.xml?ref='+encodeURIComponent(UPDATE_BRANCH));
     if(content.encoding!=='base64')throw Error('Unexpected branch sitemap encoding');
-    if(pull && sameUrls(validateSitemap(Buffer.from(content.content,'base64').toString('utf8')).urls,next.urls))return {status:'existing',url:pull.html_url};
+    if(pull && sameUrls(validateStoredSitemap(Buffer.from(content.content,'base64').toString('utf8')).urls,next.urls))return {status:'existing',url:pull.html_url};
   }
   const baseCommit=await api('/git/commits/'+baseSha);
   // The tree is based on main and changes exactly one file. No working-tree files are pushed.

@@ -1,5 +1,6 @@
 // Keep navigation synchronous; recording must never block opening FANZA.
 function trackFanzaClick(product, source = "ranking", linkType = "button") {
+  if (window.FanzaAnalytics?.isInternal) return;
   const contentId = product.id || product.content_id;
   if (!contentId || !product.url || product.url === "#") return;
 
@@ -94,6 +95,12 @@ let nextOffset = 1;
 let currentKeyword = "";
 let isLoadingMore = false;
 let searchRequestId = 0;
+let navigationSearch = window.location.search;
+
+function pushSearchHistory(state, title, url) {
+  history.pushState(state, title, url);
+  navigationSearch = window.location.search;
+}
 
 const $ = (id) => document.getElementById(id);
 const results = $("results");
@@ -478,7 +485,7 @@ function applyActressPageState(
     );
 
     if (pushHistory) {
-      history.pushState(
+      pushSearchHistory(
         { actress },
         "",
         url
@@ -497,7 +504,7 @@ function applyActressPageState(
     url.searchParams.delete("actress");
 
     if (pushHistory) {
-      history.pushState({}, "", url);
+      pushSearchHistory({}, "", url);
     }
 
     setDefaultPageState();
@@ -524,7 +531,7 @@ function searchByKeyword(keyword, scrollToTop = true) {
 
   url.searchParams.delete("actress");
 
-  history.pushState({}, "", url);
+  pushSearchHistory({}, "", url);
 
   setDefaultPageState();
 
@@ -697,17 +704,14 @@ async function fetchProducts(
 
     const response =
       await fetch(
-        `/api/search?${params.toString()}`
+        `/api/search?${params.toString()}`, { signal: AbortSignal.timeout(12000) }
       );
 
     const data =
       await response.json();
     if (requestId !== searchRequestId) return;
-    
-　　if (!append) {
- 　　 recommendationProducts = asArray(data.recommendations).map(normalizeProduct);
-  　　renderRecommendations();
-　　}
+
+    // Recommendations are owned by fetchRecommendations, not ordinary searches.
     
     if (
       !response.ok ||
@@ -754,13 +758,14 @@ localStorage.setItem(
 
     if (!append) {
       $("resultCount").textContent =
-        "0";
+        "—";
 
       showMessage(
-        `作品情報を取得できませんでした。<br><small>${error.message}</small>`
+        '作品情報を取得できませんでした。メンテナンスや通信の影響が考えられます。時間をおいて再度検索してください。'
       );
     } else {
-      alert(error.message);
+      updateLoadMoreButton(true);
+      alert("追加の作品情報を取得できませんでした。時間をおいて再度お試しください。");
     }
   } finally {
     if (requestId !== searchRequestId) return;
@@ -774,7 +779,7 @@ localStorage.setItem(
 async function fetchRecommendations() {
   try {
     const response =
-      await fetch("/api/search?mode=recommend");
+      await fetch("/api/search?mode=recommend", { signal: AbortSignal.timeout(12000) });
 
     const data =
       await response.json();
@@ -802,10 +807,13 @@ recommendationVisibleCount = 6;
       "おすすめ作品の取得に失敗しました。",
       error
     );
+    if (!recommendationProducts.length) {
+      renderRecommendations("おすすめ作品を取得できませんでした。時間をおいて再読み込みしてください。");
+    }
   }
 }
 
-function renderRecommendations() {
+function renderRecommendations(message = "おすすめ作品は現在ありません。") {
   let section = document.getElementById("recommendSection");
 
   if (!section) {
@@ -924,6 +932,13 @@ favoriteButton.addEventListener("click", () => {
     
 area.appendChild(node);
   });
+  if (!recommendationProducts.length) {
+    const status = document.createElement("p");
+    status.setAttribute("role", "status");
+    status.textContent = message;
+    area.appendChild(status);
+  }
+
   const prevBtn = document.getElementById("recommendPrevBtn");
 const nextBtn = document.getElementById("recommendNextBtn");
 
@@ -940,12 +955,14 @@ const scrollRecommendations = (direction) => {
 };
 
 if (prevBtn) {
+  prevBtn.disabled = recommendationProducts.length === 0;
   prevBtn.onclick = () => {
     scrollRecommendations(-1);
   };
 }
 
 if (nextBtn) {
+  nextBtn.disabled = recommendationProducts.length === 0;
   nextBtn.onclick = () => {
     scrollRecommendations(1);
   };
@@ -966,7 +983,7 @@ if (moreBtn) {
 }
 async function fetchSaleProducts() {
   try {
-    const response = await fetch("/api/search?mode=sale");
+    const response = await fetch("/api/search?mode=sale", { signal: AbortSignal.timeout(12000) });
 
     const data = await response.json();
 
@@ -1404,7 +1421,7 @@ let filtered = showHistoryOnly
     node.querySelector(
       ".badge"
     ).textContent =
-      product.tags[0] ||
+      (showHistoryOnly || showFavoritesOnly ? "保存済み" : product.tags[0]) ||
       product.genres[0] ||
       "作品";
 
@@ -1448,6 +1465,7 @@ let filtered = showHistoryOnly
       node.querySelector(".tags");
 
     product.tags
+      .filter(tag => !(showHistoryOnly || showFavoritesOnly) || tag !== "セール")
       .slice(0, 5)
       .forEach((tag) => {
         if (
@@ -1476,7 +1494,7 @@ let filtered = showHistoryOnly
       ".price"
     ).textContent =
       product.price > 0
-        ? `¥${product.price.toLocaleString()}〜`
+        ? `${showHistoryOnly || showFavoritesOnly ? "保存時の参考価格 " : ""}¥${product.price.toLocaleString()}〜`
         : "価格はFANZAで確認";
 
     node.querySelector(
@@ -1485,7 +1503,7 @@ let filtered = showHistoryOnly
       product.listPrice >
         product.price &&
       product.price > 0
-        ? `通常 ¥${product.listPrice.toLocaleString()}`
+        ? `${showHistoryOnly || showFavoritesOnly ? "保存時の" : ""}通常 ¥${product.listPrice.toLocaleString()}`
         : "";
     if (product.review) {
       node.querySelector(".rating").textContent += ` 評価 ${product.review.average} / 5（${product.review.count}件）`;
@@ -1641,7 +1659,7 @@ $("searchBtn").addEventListener(
       "actress"
     );
 
-    history.pushState(
+    pushSearchHistory(
       {},
       "",
       url
@@ -1692,7 +1710,7 @@ items.forEach((item, index) => {
         "actress"
       );
 
-      history.pushState(
+      pushSearchHistory(
         {},
         "",
         url
@@ -1965,7 +1983,7 @@ $("resetBtn").addEventListener(
       "actress"
     );
 
-    history.pushState(
+    pushSearchHistory(
       {},
       "",
       url
@@ -2063,6 +2081,9 @@ $("leaveBtn").addEventListener(
 window.addEventListener(
   "popstate",
   () => {
+    // Hash-only shortcuts and their Back/Forward navigation must preserve search state.
+    if (navigationSearch === window.location.search) return;
+    navigationSearch = window.location.search;
     const actress =
       new URLSearchParams(
         window.location.search
@@ -2112,3 +2133,4 @@ fetchProducts(false);
 fetchRecommendations();
 
 fetchSaleProducts();
+

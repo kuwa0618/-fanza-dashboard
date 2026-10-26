@@ -26,8 +26,10 @@
       if (!product?.id || !product.url) return;
       const payload = {content_id:product.id, title:product.title, actress:product.actresses.join(', '), maker:product.maker, genre:product.genres.join(', '), link_source:sources[document.body.dataset.catalog], link_type:link.dataset.linkType === 'image' ? 'image' : 'button'};
       // Navigation remains native and synchronous, including middle-click and modifier-click.
-      try { fetch('/api/click', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload), keepalive:true}).catch(() => {}); } catch {}
-      try { if (typeof window.gtag === 'function') window.gtag('event','fanza_click',{...payload,link_url:product.url,transport_type:'beacon'}); } catch {}
+      if (!window.FanzaAnalytics?.isInternal) {
+        try { fetch('/api/click', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload), keepalive:true}).catch(() => {}); } catch {}
+        try { if (typeof window.gtag === 'function') window.gtag('event','fanza_click',{...payload,link_url:product.url,transport_type:'beacon'}); } catch {}
+      }
       try {
         const history = JSON.parse(localStorage.getItem('viewHistory') || '[]');
         localStorage.setItem('viewHistory', JSON.stringify([product, ...history.filter(p => p.id !== product.id)].slice(0,50)));
@@ -38,3 +40,4 @@
     link.addEventListener('auxclick', activate);
   }
 })();
+

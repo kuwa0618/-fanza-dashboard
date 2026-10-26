@@ -197,7 +197,7 @@
   text-decoration: underline;
 }
 
-.recommend-carousel {
+.results.recommend-carousel {
   display: flex;
   gap: 20px;
   overflow-x: auto;
