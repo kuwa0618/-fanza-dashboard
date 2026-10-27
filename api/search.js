@@ -54,7 +54,9 @@ async function homepage(req, res) {
     } catch { console.error("Homepage catalog temporarily unavailable"); }
   }
   try {
-    const template = await readFile(`${process.cwd()}/index.html`, "utf8");
+    const template = req.readTemplate
+      ? await req.readTemplate('index.html')
+      : await readFile(`${process.cwd()}/index.html`, "utf8");
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     // Never store the social response in the shared homepage cache.
     res.setHeader("Cache-Control", twitterbot ? "private, no-store, max-age=0" : items.length ? "public, max-age=0, s-maxage=300, stale-while-revalidate=600" : "public, max-age=0, s-maxage=30");
@@ -221,4 +223,5 @@ if (mode === "sale") {
     });
   }
 }
+
 

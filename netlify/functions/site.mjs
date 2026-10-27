@@ -19,6 +19,29 @@ const handlers = {
   'genre-rankings': genreRankings, post, posts, insights, stats,
 };
 const privateApis = new Set(['post', 'posts', 'insights', 'stats']);
+const cachedPublicApis = new Set([
+  'search', 'rankings', 'favorite-rankings', 'actress-rankings', 'maker-rankings', 'genre-rankings',
+]);
+
+function setCdnCache(request, headers, status) {
+  // Keep browser caching and public CDN caching separate. Never cache writes,
+  // errors, authenticated responses, or a response that creates a cookie.
+  headers.set('Netlify-CDN-Cache-Control', 'no-store');
+  if (request.method !== 'GET' || status !== 200 || request.headers.has('authorization') ||
+      headers.has('set-cookie') || /(?:^|,)\s*private\b/i.test(headers.get('Cache-Control') || '')) return;
+  const path = new URL(request.url).pathname;
+  const api = path.match(/^\/api\/([a-z-]+)\/?$/)?.[1];
+  if (cachedPublicApis.has(api) && /^application\/json\b/i.test(headers.get('Content-Type') || '')) {
+    // Full URL queries remain in the cache key, including keyword, offset,
+    // sort and period. Public data can be up to 60 seconds old.
+    headers.set('Netlify-CDN-Cache-Control', 'public, durable, max-age=60');
+    return;
+  }
+  const cache = headers.get('Cache-Control') || '';
+  if (!api && /(?:^|,)\s*public\b/i.test(cache) && !/\bno-store\b/i.test(cache) && /\bs-maxage=\d+\b/.test(cache)) {
+    headers.set('Netlify-CDN-Cache-Control', cache + ', durable');
+  }
+}
 const privatePages = {
   analysis: 'analysis.html', dashboard: 'dashboard.html',
   'post-form': 'post-form.html', 'click-analysis': 'click-analysis.html',
@@ -54,7 +77,7 @@ function authorize(request) {
   }
 }
 
-async function invoke(handler, request, query, extraHeaders, site) {
+async function invoke(handler, request, query, extraHeaders, site, readTemplate) {
   let body;
   if (!['GET', 'HEAD'].includes(request.method)) {
     const raw = await request.text();
@@ -73,15 +96,17 @@ async function invoke(handler, request, query, extraHeaders, site) {
     send(value) { output = String(value ?? ''); sent = true; return this; },
     end(value) { return this.send(value); },
   };
-  await handler({ method: request.method, query, body, headers: Object.fromEntries(request.headers), url: request.url }, res);
+  await handler({ method: request.method, query, body, headers: Object.fromEntries(request.headers), url: request.url, readTemplate }, res);
   if (!sent) throw new Error('Handler did not send a response');
   // Existing renderers retain their Vercel defaults; only the new host adapter changes metadata.
   output = output.replaceAll(oldOrigin, site);
   for (const [key, value] of headers) if (value.includes(oldOrigin)) headers.set(key, value.replaceAll(oldOrigin, site));
+  setCdnCache(request, headers, status);
   return new Response(request.method === 'HEAD' || status === 204 ? null : output, { status, headers });
 }
 
-export default async function handler(request) {
+export function createSiteHandler({ readTemplate = name => readFile(`${process.cwd()}/${name}`, 'utf8') } = {}) {
+ return async function handler(request) {
   try {
     const site = origin();
     const url = new URL(request.url);
@@ -97,7 +122,7 @@ export default async function handler(request) {
     }
     if (pageMatch) {
       if (!['GET', 'HEAD'].includes(request.method)) return new Response(null, { status: 405, headers: { ...adminHeaders, Allow: 'GET, HEAD' } });
-      const html = await readFile(`${process.cwd()}/${privatePages[pageMatch[1]]}`, 'utf8');
+      const html = await readTemplate(privatePages[pageMatch[1]]);
       return new Response(request.method === 'HEAD' ? null : html.replaceAll(oldOrigin, site), {
         headers: { ...adminHeaders, 'Content-Type': 'text/html; charset=utf-8' },
       });
@@ -117,13 +142,16 @@ export default async function handler(request) {
     } else if (apiMatch && Object.hasOwn(handlers, apiMatch[1])) selected = handlers[apiMatch[1]];
     else return new Response('Not found', { status: 404 });
     if (!apiMatch && !['GET', 'HEAD'].includes(request.method)) return new Response(null, { status: 405, headers: { Allow: 'GET, HEAD' } });
-    return await invoke(selected, request, query, privateApis.has(apiMatch?.[1]) ? adminHeaders : {}, site);
+    return await invoke(selected, request, query, privateApis.has(apiMatch?.[1]) ? adminHeaders : {}, site, readTemplate);
   } catch {
     // Never return environment values or upstream error details.
     console.error('Hosting adapter request failed');
     return new Response('一時的に利用できません。', { status: 503, headers: { 'Cache-Control': 'no-store' } });
   }
+ };
 }
+
+export default createSiteHandler();
 
 export const config = {
   path: [
@@ -135,3 +163,4 @@ export const config = {
     '/click-analysis', '/click-analysis/*', '/click-analysis.html', '/click-analysis.html/*',
   ],
 };
+

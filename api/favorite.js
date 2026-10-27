@@ -33,6 +33,7 @@ export default async function handler(request, response) {
       `${supabaseUrl}/rest/v1/favorite_logs`,
       {
         method: "POST",
+        signal: AbortSignal.timeout(10000),
         headers: {
           apikey: supabaseKey,
           Authorization: `Bearer ${supabaseKey}`,
@@ -72,3 +73,4 @@ export default async function handler(request, response) {
     });
   }
 }
+

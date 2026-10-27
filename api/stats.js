@@ -100,14 +100,14 @@ export default async function handler(req, res) {
           "?select=content_id,title,actress,maker,genre,clicked_at" +
           "&order=clicked_at.desc" +
           "&limit=1000",
-        { headers }
+        { headers, signal: AbortSignal.timeout(10000) }
       ),
       fetch(
         `${process.env.SUPABASE_URL}/rest/v1/favorite_logs` +
           "?select=content_id,title,favorited_at" +
           "&order=favorited_at.desc" +
           "&limit=1000",
-        { headers }
+        { headers, signal: AbortSignal.timeout(10000) }
       ),
     ]);
 
@@ -270,3 +270,4 @@ export default async function handler(req, res) {
     });
   }
 }
+
