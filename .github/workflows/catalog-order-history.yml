@@ -1,0 +1,85 @@
+name: Catalog order observations
+
+on:
+  workflow_dispatch:
+    inputs:
+      initialize_history:
+        description: '初回のみ有効化。過去の成果物がない場合に空の履歴で開始します。'
+        type: boolean
+        default: false
+  schedule:
+    # 00:43 / 06:43 / 12:43 / 18:43 JST. Disabled until the repository variable is enabled.
+    - cron: '43 3,9,15,21 * * *'
+  pull_request:
+    paths:
+      - 'scripts/catalog-order-history.mjs'
+      - 'tests/catalog-order-history.test.mjs'
+      - '.github/workflows/catalog-order-history.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: catalog-order-history-${{ github.event.pull_request.number || 'capture' }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: node --test tests/catalog-order-history.test.mjs
+  capture:
+    if: github.repository == 'kuwa0618/-fanza-dashboard' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && vars.CATALOG_HISTORY_ENABLED == 'true'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Restore previous successful observation (never silently reset expired history)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          INITIALIZE_ALLOWED: ${{ github.event_name == 'workflow_dispatch' && inputs.initialize_history }}
+        run: |
+          mkdir -p .catalog-order
+          gh api "repos/$GH_REPO/actions/artifacts?name=catalog-order-history&per_page=1" > /tmp/catalog-artifacts.json
+          node --input-type=module -e "import fs from 'node:fs'; const a=JSON.parse(fs.readFileSync('/tmp/catalog-artifacts.json')).artifacts[0]; if(a?.expired) throw Error('Previous history expired; restore it before collecting.'); if(!a && process.env.INITIALIZE_ALLOWED !== 'true') throw Error('History missing. First capture requires explicit initialize_history; otherwise restore the saved history.'); if(a) fs.writeFileSync('/tmp/catalog-artifact-id', String(a.id));"
+          if test -f /tmp/catalog-artifact-id; then
+            artifact_id=$(cat /tmp/catalog-artifact-id)
+            gh api "repos/$GH_REPO/actions/artifacts/$artifact_id/zip" > /tmp/catalog-history.zip
+            unzip -p /tmp/catalog-history.zip history.json > .catalog-order/history.json
+          fi
+      - name: Capture once and render offline report
+        run: node scripts/catalog-order-history.mjs
+      - name: Retain validated history and offline report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: catalog-order-history
+          path: |
+            .catalog-order/history.json
+            .catalog-order/index.html
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: error
+      - name: Explain output
+        run: |
+          echo '### カタログ順序の観測記録' >> "$GITHUB_STEP_SUMMARY"
+          echo 'この実行の catalog-order-history をダウンロードして index.html を開いてください。購入件数・公式日間/月間ランキングではありません。データは35日分、成果物のダウンロード期限は7日です。' >> "$GITHUB_STEP_SUMMARY"
